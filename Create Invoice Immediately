@@ -1,0 +1,289 @@
+booksOrgId = "XXXXXX";
+newLine = hexToText("0A");
+try 
+{
+	dealEntry = zoho.crm.getRecordById("Deals",dealId);
+	language = ifNull(dealEntry.get("Language"),"DE");
+	stufe = dealEntry.get("Stage");
+	if(stufe == "Option")
+	{
+		return "Für die Stufe " + stufe + " kann keine Rechnung angelegt werden.";
+	}
+	if(dealEntry.get("Buchungstyp") != "Online")
+	{
+		return "This Booking is not Online";
+	}
+	hauptProdukt = dealEntry.get("Hauptprodukt");
+	hauptProduktId = hauptProdukt.get("id");
+	hauptProduktEntry = zoho.crm.getRecordById("Products",hauptProduktId);
+	projectId = ifNull(hauptProduktEntry.get("Project_ID"),"");
+	location = ifNull(hauptProduktEntry.get("Location"),"");
+	buchungstyp = ifNull(dealEntry.get("Buchungstyp"),"Manuell");
+	//info "dealEntry: " + dealEntry;
+	///// PRODUCTS /////
+	products = dealEntry.get("Produkte");
+	////////////////////
+	contactName = dealEntry.get("Contact_Name");
+	if(contactName == null || contactName == "")
+	{
+		return "Bitte wähle einen Kontakt.";
+	}
+	anzahlungProz = ifNull(dealEntry.get("Anzahlung"),0);
+	anzahlungsBetrag = ifNull(dealEntry.get("Anzahlung_Betrag"),0);
+	gesamtBetrag = ifNull(dealEntry.get("Gesamtbetrag"),0);
+	anzahlungErfolgte = dealEntry.get("Anzahlung_erfolgt");
+	invoices = zoho.invoice.getRecords("Invoices",booksOrgId,{"filter_by":"Status.All"},contactName.get("name"),"","XXXXXXX");
+	//info "invoices: " + invoices;
+	invoicesList = invoices.get("invoices");
+	if(invoicesList.size() > 0)
+	{
+		for each  inv in invoicesList
+		{
+			if(inv.get("zcrm_potential_id") == dealId && inv.get("status") != "draft")
+			{
+				//return "Es gibt schon eine Rechnung zu dieses Buchung " + inv.get("invoice_number");
+				rechnungIsDraft = false;
+				invId = inv.get("invoice_id");
+			}
+			else if(inv.get("zcrm_potential_id") == dealId && inv.get("status") == "draft")
+			{
+				rechnungIsDraft = true;
+				invId = inv.get("invoice_id");
+			}
+		}
+	}
+	else
+	{
+		rechnungIsDraft = true;
+	}
+	//info "contactBooks: " + contactBooks;
+	info "Draft " + rechnungIsDraft;
+	info "inv " + invId;
+	contactIdBooks = "";
+	contactNameBooks = "";
+	contact_name = dealEntry.get("Contact_Name").toMap();
+	crm_contact_id = contact_name.get("id");
+	//contact fetch
+	contactBooks = invokeurl
+	[
+		url :"https://invoice.zoho.eu/api/v3/contacts"
+		type :GET
+		parameters:{"zcrm_contact_id":crm_contact_id}
+		connection:"XXXXXXX"
+	];
+	if(contactBooks.get("contacts").size() = 1)
+	{
+		contactIdBooks = contactBooks.get("contacts").get(0).toMap().get("contact_id");
+	}
+	else
+	{
+		createContact = invokeurl
+		[
+			url :"https://invoice.zoho.eu/api/v3/crm/contact/" + crm_contact_id + "/import"
+			type :POST
+			connection:"XXXXXXX"
+		];
+		contactIdBooks = createContact.get("data").toMap().get("contact_id");
+	}
+	///////////////////////////////////////////////
+	prodList = List();
+	prodListTableInDeal = List();
+	collProdInDeal = Collection();
+	startDatum = "";
+	gesamtPreis = 0;
+	leistungszeitraumStart = null;
+	leistungszeitraumEnde = null;
+	for each  objects in products
+	{
+		//info "Objects: " + objects;
+		status = objects.get("Status");
+		if(status == "Gebucht")
+		{
+			prodmp = Map();
+			productId = objects.get("Produkt").get("id");
+			productname = objects.get("Produkt").get("name");
+			productEntry = zoho.crm.getRecordById("Products",productId);
+			description = productEntry.get("Description");
+			listPrice = ifNull(objects.get("Unit_Price"),ifNull(productEntry.get("Unit_Price"),"0.0")).toDecimal();
+			startDatum = ifNull(productEntry.get("Startdatum"),"");
+			endeDatum = ifNull(productEntry.get("Endedatum"),"");
+			numberOfProduct = ifNull(objects.get("Anzahl_der_Plaetze"),1);
+			if(leistungszeitraumStart = null && startDatum != "")
+			{
+				leistungszeitraumStart = startDatum.toDate("yyyy-MM-dd");
+			}
+			else if(startDatum != "")
+			{
+				if(leistungszeitraumStart > startDatum.toDate("yyyy-MM-dd"))
+				{
+					leistungszeitraumStart = startDatum.toDate("yyyy-MM-dd");
+				}
+			}
+			if(leistungszeitraumEnde = null && endeDatum != "")
+			{
+				leistungszeitraumEnde = endeDatum.toDate("yyyy-MM-dd");
+			}
+			else if(endeDatum != "")
+			{
+				if(leistungszeitraumEnde > endeDatum.toDate("yyyy-MM-dd"))
+				{
+					leistungszeitraumEnde = endeDatum.toDate("yyyy-MM-dd");
+				}
+			}
+			prodmp.put("name",productname);
+			prodmp.put("rate",listPrice);
+			//info "listPrice: " + listPrice;
+			prodmp.put("quantity",numberOfProduct);
+			prodmp.put("description",ifNull(description,""));
+			prodmp.put("tax_percentage",19);
+			prodmp.put("unit","Stück");
+			prodList.add(prodmp);
+			gesamtPreis = gesamtPreis + listPrice * numberOfProduct;
+			collProdInDeal.insert(productId:1);
+		}
+	}
+	info "gesamtPreis: " + gesamtPreis;
+	if(contactIdBooks != "")
+	{
+		mp = Map();
+		mp.put("customer_id",contactIdBooks);
+		mp.put("line_items",prodList);
+		mp.put("date",zoho.currentdate);
+		mp.put("zcrm_potential_id",dealId);
+		if(language == "DE")
+		{
+			mp.put("template_id",XXXXXXX);
+		}
+		else
+		{
+			mp.put("template_id",XXXXXXX);
+		}
+		mp.put("payment_terms",ifNull(contactBooks.get("contacts").get(0).get("payment_terms"),14));
+		mp.put("payment_terms_label",ifNull(contactBooks.get("contacts").get(0).get("payment_terms_label"),"Netto 14"));
+		listCustomsFields = List();
+		if(language == "DE")
+		{
+			listCustomsFields.add({"label":"Leistungsort","value":location});
+			if(leistungszeitraumStart != null && leistungszeitraumEnde != null)
+			{
+				listCustomsFields.add({"label":"Leistungszeitraum","value":leistungszeitraumStart.toString("dd.MM.yyyy") + "-" + leistungszeitraumEnde.toString("dd.MM.yyyy")});
+			}
+		}
+		else
+		{
+			listCustomsFields.add({"label":"Place of Performance","value":location});
+			if(leistungszeitraumStart != null && leistungszeitraumEnde != null)
+			{
+				listCustomsFields.add({"label":"Date of Services","value":leistungszeitraumStart.toString("dd.MM.yyyy") + "-" + leistungszeitraumEnde.toString("dd.MM.yyyy")});
+			}
+		}
+		listCustomsFields.add({"label":"Project ID","value":projectId});
+		mp.put("custom_fields",listCustomsFields);
+		///// ZAHLUNGSPLAN /////////
+		info "startDatum: " + startDatum;
+		if(startDatum != "")
+		{
+			converted_date = startDatum.toDate("yyyy-MM-dd").subDay(28);
+		}
+		else
+		{
+			converted_date = zoho.currentdate.addDay(14).toString("dd.MM.yyyy");
+		}
+		payment_plan = if(language == "DE","Zahlungsplan","Payment Plan");
+		notes = payment_plan + newLine;
+		notes = notes + "----------------------------------------------------------" + newLine;
+		gesamtBetrag = if(gesamtBetrag == 0,gesamtPreis,gesamtBetrag);
+		anzahlungsBetrag = if(anzahlungsBetrag == 0,gesamtBetrag * anzahlungProz / 100,anzahlungsBetrag);
+		anzahlungsBetragPayment = anzahlungsBetrag;
+		restBetrag = gesamtBetrag - anzahlungsBetrag;
+		info "restBetrag  " + restBetrag;
+		anzahlungsBetrag = if(anzahlungsBetrag == 0,gesamtBetrag * if(anzahlungProz == 0,20,anzahlungProz) / 100,anzahlungsBetrag);
+		info "anzahlungsBetrag 2" + anzahlungsBetrag;
+		anzahlungProz = if(anzahlungProz == 0,20,anzahlungProz);
+		info "anzahlungProz " + anzahlungProz;
+		betragdergebuchtenLeistungen = if(language == "DE","Betrag der gebuchten Leistungen                  ","Amount of the booked services                      ");
+		GeleisteteAnzahlung = if(language == "DE","Geleistete Anzahlung                 ","Deposit paid                      ");
+		Restbetragzahlbarbis = if(language == "DE","Restbetrag zahlbar bis ","Outstanding balance due on ");
+		anzahlung = if(language == "DE","Anzahlung (","Deposit paid (");
+		zahlbarbis = if(language == "DE","%)  zahlbar bis ","% payable until ");
+		//
+		notes = notes + betragdergebuchtenLeistungen + gesamtBetrag + " €" + newLine;
+		notes = notes + anzahlung + anzahlungProz + zahlbarbis + ")" + "   " + anzahlungsBetrag + " €" + newLine;
+		notes = notes + Restbetragzahlbarbis + zoho.currentdate.toString("dd.MM.yyyy") + "       " + restBetrag + " €" + newLine;
+		mp.put("notes",notes);
+		mp.put("reason","Update");
+		mp.put("date",zoho.currentdate.toString("yyyy-MM-dd"));
+		mp.put("due_date",zoho.currentdate.toString("yyyy-MM-dd"));
+		mp.put("payment_terms_label","ZETM Standard");
+		mp.put("reference_number",projectId);
+		mp.put("payment_made",anzahlungsBetrag);
+		//// PAYMENT OPTION
+		if(rechnungIsDraft == true || rechnungIsDraft == null)
+		{
+			respCreate = zoho.invoice.create("Invoices",booksOrgId,mp,"invoice_connection");
+			info "Create " + respCreate;
+			payment_map = Map();
+			payment_map.put("customer_id",respCreate.get("invoice").getJSON("customer_id"));
+			payment_map.put("payment_mode","stripes");
+			payment_map.put("amount",anzahlungsBetrag);
+			payment_map.put("date",zoho.currentdate.toString("yyyy-MM-dd"));
+			payment_map.put("reference_number",if(dealEntry.get("Payment_ID") == null,"",dealEntry.get("Payment_ID")));
+			inv_map = Map();
+			inv_map.put("invoice_id",respCreate.get("invoice").get("invoice_id"));
+			inv_map.put("amount_applied",anzahlungsBetrag);
+			inv_list = List();
+			inv_list.add(inv_map);
+			payment_map.put("invoices",inv_list);
+			create_payment = invokeurl
+			[
+				url :"https://invoice.zoho.eu/api/v3/customerpayments"
+				type :POST
+				parameters:payment_map.toString()
+				connection:"XXXXXXX"
+			];
+			info "Payment " + create_payment;
+			//info "Create Invoice " + respCreate;
+			msg = respCreate.get("message");
+		}
+		else
+		{
+			respCreate = zoho.invoice.update("Invoices",booksOrgId,invId,mp,"XXXXXXX");
+			info "Update " + respCreate;
+			msg = respCreate.get("message");
+		}
+		if(respCreate.get("code") == 0)
+		{
+			invName = respCreate.get("invoice").get("invoice_number");
+			invId = respCreate.get("invoice").get("invoice_id");
+			mpDeal = Map();
+			for each  prodInDeal in dealEntry.get("Produkte")
+			{
+				rowId = prodInDeal.get("id");
+				mapper = Map();
+				mapper.put("id",rowId);
+				mapper.put("in_Rechnung_verwendet",invName);
+				if(collProdInDeal.containsKey(prodInDeal.get("Produkt").get("id")))
+				{
+					prodListTableInDeal.add(mapper);
+				}
+			}
+			mpDeal.put("Produkte",prodListTableInDeal);
+			mpDeal.put("Amount",gesamtPreis);
+			respDeal = zoho.crm.updateRecord("Deals",dealId,mpDeal);
+		}
+		else
+		{
+			return "Fehler: " + respCreate.get("message");
+		}
+	}
+	else
+	{
+		return "Kontakt konnte nicht in Zoho Invoice gefunden werden";
+	}
+}
+catch (e)
+{
+	info "error: " + e;
+	return "Fehler: " + e;
+}
+return e;
