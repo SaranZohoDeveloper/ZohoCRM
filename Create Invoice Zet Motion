@@ -1,4 +1,4 @@
-booksOrgId = "20085936994";
+booksOrgId = "XXXXXXXX";
 newLine = hexToText("0A");
 get_deal_details = zoho.crm.getRecordById("Deals",dealID);
 //info get_deal_details;
@@ -10,8 +10,8 @@ product_list = get_deal_details.get("Products_List");
 contact_name = get_deal_details.getjson("Contact_Name");
 //info "name" + contact_name.get("name");
 //info "id" + contact_name.get("id");
-contactBooks = zoho.invoice.getRecords("Contacts",booksOrgId,{"filter_by":"Status.Active"},contact_name.get("name"),"","crm_invoice");
-get_all_invoices = zoho.invoice.getRecords("Invoices",booksOrgId,{"filter_by":"Status.All"},contact_name.get("name"),"","crm_invoice");
+contactBooks = zoho.invoice.getRecords("Contacts",booksOrgId,{"filter_by":"Status.Active"},contact_name.get("name"),"","XXXXXXX");
+get_all_invoices = zoho.invoice.getRecords("Invoices",booksOrgId,{"filter_by":"Status.All"},contact_name.get("name"),"","XXXXXXX");
 //info "invoices: " + invoices;
 //info  "Contact " +contactBooks;
 invoiceIsDraft = false;
@@ -134,7 +134,7 @@ if(contactIdBooks != "")
 	/////// BEI MANUELLEN RECHNUNGEN
 	if(booking_type == "Manual")
 	{
-		mp.put("template_id",353495000000000103);
+		mp.put("template_id",XXXXXXXXXXXXXXXXXXXXX);
 	}
 	//mp.put("payment_terms",ifNull(contactBooks.get("contacts").get(0).get("payment_terms"),14));
 	//mp.put("payment_terms_label",ifNull(contactBooks.get("contacts").get(0).get("payment_terms_label"),"Netto 14"));
@@ -218,7 +218,7 @@ if(contactIdBooks != "")
 	///////////////////
 	if(!invoiceIsDraft)
 	{
-		respCreate = zoho.invoice.create("Invoices",booksOrgId,mp,"crm_invoice");
+		respCreate = zoho.invoice.create("Invoices",booksOrgId,mp,"XXXXXXX");
 		payment_map = Map();
 		payment_map.put("customer_id",respCreate.get("invoice").getJSON("customer_id"));
 		payment_map.put("payment_mode",get_deal_details.get("Payment_Mode"));
@@ -236,14 +236,14 @@ if(contactIdBooks != "")
 			url :"https://invoice.zoho.eu/api/v3/customerpayments"
 			type :POST
 			parameters:payment_map.toString()
-			connection:"crm_invoice"
+			connection:"XXXXXXX"
 		];
 		info "Payment " + create_payment;
 		//zoho.invoice.create("customerpayments",)
 	}
 	else
 	{
-		respCreate = zoho.invoice.update("Invoices",booksOrgId,invId,mp,"crm_invoice");
+		respCreate = zoho.invoice.update("Invoices",booksOrgId,invId,mp,"XXXXXXX");
 	}
 	//info "map mp: " + mp;
 	msg = respCreate.get("message");
