@@ -1,0 +1,256 @@
+booksOrgId = "20085936994";
+newLine = hexToText("0A");
+get_deal_details = zoho.crm.getRecordById("Deals",dealID);
+//info get_deal_details;
+language = ifNull(get_deal_details.get("Language"),"DE");
+get_stage = get_deal_details.get("Stage");
+main_product = get_deal_details.get("MainProduct").get("id");
+booking_type = ifNull(get_deal_details.get("Booking_Type"),"Manual");
+product_list = get_deal_details.get("Products_List");
+contact_name = get_deal_details.getjson("Contact_Name");
+//info "name" + contact_name.get("name");
+//info "id" + contact_name.get("id");
+contactBooks = zoho.invoice.getRecords("Contacts",booksOrgId,{"filter_by":"Status.Active"},contact_name.get("name"),"","crm_invoice");
+get_all_invoices = zoho.invoice.getRecords("Invoices",booksOrgId,{"filter_by":"Status.All"},contact_name.get("name"),"","crm_invoice");
+//info "invoices: " + invoices;
+//info  "Contact " +contactBooks;
+invoiceIsDraft = false;
+invoicesList = get_all_invoices.get("invoices");
+if(get_all_invoices.size() > 0)
+{
+	for each  inv in invoicesList
+	{
+		if(inv.get("zcrm_potential_id") == dealID && inv.get("status") != "draft")
+		{
+			return "There is already an invoice for this booking " + inv.get("invoice_number");
+		}
+		else if(inv.get("zcrm_potential_id") == dealID && inv.get("status") == "draft")
+		{
+			invoiceIsDraft = true;
+			invId = inv.get("invoice_id");
+		}
+	}
+}
+if(contactBooks.get("contacts").size() > 0)
+{
+	contactIdBooks = ifNull(contactBooks.get("contacts").get(0).get("contact_id"),null);
+	contactNameBooks = ifNull(contactBooks.get("contacts").get(0).get("contact_name"),null);
+}
+else
+{
+	//info "Contact ";
+	contactIdBooks = standalone.Create_Contacts(contact_name.get("name"),contact_name.get("id"));
+	info contactIdBooks;
+}
+prodList = List();
+prodListTableInDeal = List();
+collProdInDeal = Collection();
+performance_period_start = null;
+performance_period_end = null;
+total_price = 0;
+for each  pro in product_list
+{
+	status = pro.get("Status");
+	if(status == "Gebucht")
+	{
+		prodmp = Map();
+		productId = pro.get("Product_Name").get("id");
+		productname = pro.get("Product_Name").get("name");
+		if(productname.contains("(") == true)
+		{
+			get_last_date = productname.getSuffix("(").remove(")").getPrefix("-");
+			//info get_last_date;
+			if(get_last_date.contains(".") == true)
+			{
+				convert_list = get_last_date.toList(".");
+			}
+			else if(get_last_date.contains("/") == true)
+			{
+				convert_list = get_last_date.toList("/");
+			}
+			get_day = convert_list.get(0);
+			//info get_month;
+			get_month = convert_list.get(1);
+			get_year = convert_list.get(2);
+			date_format = get_day + "-" + get_month + "-" + get_year;
+			get_date = date_format.toString("yyyy-MM-dd");
+			due_date = get_date.subDay(28);
+			info "DD " + due_date;
+		}
+		else
+		{
+			due_date = zoho.currentdate.addDay(14).toString("yyyy-MM-dd");
+		}
+		productEntry = zoho.crm.getRecordById("Products",productId);
+		description = productEntry.get("Description");
+		listPrice = ifNull(pro.get("UnitPrice"),ifNull(productEntry.get("UnitPrice"),"0.0")).toDecimal();
+		startDate = ifNull(productEntry.get("Start_Date"),"");
+		info "sd " + startDate;
+		endeDate = ifNull(productEntry.get("End_Date"),"");
+		numberOfProduct = ifNull(pro.get("Number_of_Places"),1);
+		if(performance_period_start = null && startDate != "")
+		{
+			performance_period_start = startDate.toDate("yyyy-MM-dd");
+		}
+		else if(startDate != "")
+		{
+			if(performance_period_start > startDate.toDate("yyyy-MM-dd"))
+			{
+				performance_period_start = startDate.toDate("yyyy-MM-dd");
+			}
+		}
+		if(performance_period_end = null && endeDate != "")
+		{
+			performance_period_end = endeDate.toDate("yyyy-MM-dd");
+		}
+		else if(endeDate != "")
+		{
+			if(performance_period_end > endeDate.toDate("yyyy-MM-dd"))
+			{
+				performance_period_end = endeDate.toDate("yyyy-MM-dd");
+			}
+		}
+		prodmp.put("name",productname);
+		prodmp.put("rate",listPrice);
+		info "listPrice: " + listPrice;
+		prodmp.put("quantity",numberOfProduct);
+		prodmp.put("description",ifNull(description,""));
+		prodmp.put("tax_percentage",19);
+		prodmp.put("unit","Stück");
+		prodList.add(prodmp);
+		total_price = total_price + listPrice * numberOfProduct;
+		collProdInDeal.insert(productId:1);
+	}
+}
+if(contactIdBooks != "")
+{
+	mp = Map();
+	mp.put("customer_id",contactIdBooks);
+	//mp.put("customer_name",contactNameBooks);
+	mp.put("line_items",prodList);
+	mp.put("date",zoho.currentdate.toString("yyyy-MM-dd"));
+	//mp.put("due_date",due_date.toString("yyyy-MM-dd"));
+	mp.put("zcrm_potential_id",dealID);
+	/////// BEI MANUELLEN RECHNUNGEN
+	if(booking_type == "Manual")
+	{
+		mp.put("template_id",353495000000000103);
+	}
+	//mp.put("payment_terms",ifNull(contactBooks.get("contacts").get(0).get("payment_terms"),14));
+	//mp.put("payment_terms_label",ifNull(contactBooks.get("contacts").get(0).get("payment_terms_label"),"Netto 14"));
+	listCustomsFields = List();
+	listCustomsFields.add({"label":"Place of performance","value":"location"});
+	if(performance_period_start != null && performance_period_end != null)
+	{
+		listCustomsFields.add({"label":"Period of performance","value":performance_period_start.toString("dd.MM.yyyy") + "-" + performance_period_end.toString("dd.MM.yyyy")});
+	}
+	mp.put("custom_fields",listCustomsFields);
+	///// ZAHLUNGSPLAN /////////
+	info "startDatum " + startDate;
+	if(startDate != "" || startDate != "null" || startDate != null || startDate != " ")
+	{
+		//converted_date = startDate.toDate("yyyy-MM-dd").subDay(28);
+	}
+	else
+	{
+		converted_date = zoho.currentdate.addDay(14).toString("dd.MM.yyyy");
+	}
+	notes = "Payment Plan" + newLine;
+	notes = notes + "----------------------------------------------------------" + newLine;
+	Total_amt = 0;
+	deposit_amount = 0;
+	deposit_perc = 0;
+	Total_amt = if(Total_amt == 0,total_price,Total_amt);
+	deposit_amount = if(deposit_amount == 0,total_price * deposit_perc / 100,deposit_amount);
+	//gesamtBetrag = if(gesamtBetrag == 0,gesamtPreis,gesamtBetrag);
+	//anzahlungsBetrag = if(anzahlungsBetrag == 0,gesamtBetrag * anzahlungProz / 100,anzahlungsBetrag);
+	//anzahlungsBetragPayment = anzahlungsBetrag;
+	DepositAmountPayment = deposit_amount;
+	mp.put("adjustment",-1 * deposit_amount);
+	mp.put("adjustment_description","Deposit");
+	remaining_amount = Total_amt - deposit_amount;
+	deposit_amount = if(deposit_amount == 0,Total_amt * if(deposit_perc == 0,20,deposit_perc) / 100,deposit_amount);
+	deposit_perc = if(deposit_perc == 0,20,deposit_perc);
+	///// ZAHLEN FÜR NOTES ///////////
+	delimiter = ".";
+	numberDelimiter = ",";
+	if(language == "DE")
+	{
+		delimiter = ",";
+		numberDelimiter = ".";
+	}
+	remaining_amount = standalone.TestFrac(remaining_amount,delimiter);
+	remaining_amount = remaining_amount.replaceAll("(?<=[0-9])(?=([0-9][0-9][0-9])+(?![0-9]))",numberDelimiter);
+	Total_amt = standalone.TestFrac(Total_amt,delimiter);
+	Total_amt = Total_amt.replaceAll("(?<=[0-9])(?=([0-9][0-9][0-9])+(?![0-9]))",numberDelimiter);
+	deposit_amount = standalone.TestFrac(deposit_amount,delimiter);
+	deposit_amount = deposit_amount.replaceAll("(?<=[0-9])(?=([0-9][0-9][0-9])+(?![0-9]))",numberDelimiter);
+	amount_of_booked_services = if(language == "DE","Betrag der gebuchten Leistungen            ","Amount of the booked services            ");
+	deposit_paid = if(language == "DE","Geleistete Anzahlung              ","deposit paid            ");
+	outstanding_balance_due_on = if(language == "DE","Restbetrag zahlbar bis      ","outstanding balance due on       ");
+	down_payment = if(language == "DE","Anzahlung (","deposit paid (");
+	payable_until = if(language == "DE","%)  zahlbar bis ","% payable until ");
+	if(booking_type == "Online")
+	{
+		notes = notes + amount_of_booked_services + Total_amt + "€" + newLine;
+		notes = notes + deposit_paid + deposit_amount + "€" + newLine;
+		notes = notes + outstanding_balance_due_on + due_date.toString("dd.MM.yyyy") + "      " + remaining_amount + "€" + newLine;
+	}
+	else
+	{
+		notes = notes + amount_of_booked_services + Total_amt + "€" + newLine;
+		notes = notes + down_payment + deposit_perc + payable_until + zoho.currentdate.toString("dd.MM.yyyy") + " " + deposit_amount + "€" + newLine;
+		notes = notes + outstanding_balance_due_on + due_date.toString("dd.MM.yyyy") + "      " + remaining_amount + "€" + newLine;
+	}
+	mp.put("notes",notes);
+	mp.put("date",zoho.currentdate.toString("yyyy-MM-dd"));
+	paymentGateways = Map();
+	options = List();
+	option = Map();
+	option.put("configured",true);
+	option.put("can_show_billing_address",false);
+	option.put("is_bank_account_applicable",false);
+	option.put("can_pay_using_new_card",true);
+	option.put("gateway_name","stripe");
+	options.add(option);
+	paymentGateways.put("payment_gateways",options);
+	//mp.put("payment_options",paymentGateways);
+	///////////////////
+	if(!invoiceIsDraft)
+	{
+		respCreate = zoho.invoice.create("Invoices",booksOrgId,mp,"crm_invoice");
+		payment_map = Map();
+		payment_map.put("customer_id",respCreate.get("invoice").getJSON("customer_id"));
+		payment_map.put("payment_mode",get_deal_details.get("Payment_Mode"));
+		payment_map.put("amount",get_deal_details.get("Paid_Amount"));
+		payment_map.put("date",zoho.currentdate.toString("yyyy-MM-dd"));
+		inv_map = Map();
+		inv_map.put("invoice_id",respCreate.get("invoice").getJSON("invoice_id"));
+		inv_map.put("amount_applied",get_deal_details.get("Paid_Amount"));
+		inv_list = List();
+		inv_list.add(inv_map);
+		payment_map.put("invoices",inv_list);
+		//info payment_map;
+		create_payment = invokeurl
+		[
+			url :"https://invoice.zoho.eu/api/v3/customerpayments"
+			type :POST
+			parameters:payment_map.toString()
+			connection:"crm_invoice"
+		];
+		info "Payment " + create_payment;
+		//zoho.invoice.create("customerpayments",)
+	}
+	else
+	{
+		respCreate = zoho.invoice.update("Invoices",booksOrgId,invId,mp,"crm_invoice");
+	}
+	//info "map mp: " + mp;
+	msg = respCreate.get("message");
+	info "create: " + respCreate;
+}
+else
+{
+	msg = "Contact could not be found in Zoho Invoice";
+}
+return msg;
