@@ -1,0 +1,277 @@
+var Company = ZDK.Page.getField('Company').getValue();
+var Legal_entity = ZDK.Page.getField('Legal_Entity');
+if (Legal_entity.getValue() == null)
+{
+    Legal_entity.addTooltip("This field can't be empty");
+    //Legal_entity.setMandatory(true);
+}
+var Business_phone = ZDK.Page.getField('Business_Phone');
+if (Business_phone.getValue() == null)
+{
+    Business_phone.addTooltip("This field can't be empty");
+}
+var Business_email_address = ZDK.Page.getField('Business_Email');
+if (Business_email_address.getValue() == null)
+{
+    Business_email_address.addTooltip("This field can't be empty");
+}
+var Get_Industry = ZDK.Page.getField('Industry');
+if (Get_Industry.getValue() == null)
+{
+    Get_Industry.addTooltip("This field can't be empty");
+}
+var Physical_address = ZDK.Page.getField('Physical_Address');
+if (Physical_address.getValue() == null)
+{
+    Physical_address.addTooltip("This field can't be empty");
+}
+var Physical_city = ZDK.Page.getField('Physical_City');
+if (Physical_city.getValue() == null)
+{
+    Physical_city.addTooltip("This field can't be empty");
+}
+var Physical_state = ZDK.Page.getField('Physical_State');
+if (Physical_state.getValue() == null)
+{
+    Physical_state.addTooltip("This field can't be empty");
+}
+var Physical_zipcode = ZDK.Page.getField('Physical_Zip_Code');
+if (Physical_zipcode.getValue() == null)
+{
+     Physical_zipcode.addTooltip("This field can't be empty");
+ }
+var Credit_card_processor = ZDK.Page.getField('Current_Credit_Card_Processor');
+if (Credit_card_processor.getValue() == null)
+{
+     Credit_card_processor.addTooltip("This field can't be empty");
+ }
+var Credit_card_monthly_volume = ZDK.Page.getField('Credit_Card_Monthly_Volume');
+if (Credit_card_monthly_volume.getValue() == null)
+{
+     Credit_card_monthly_volume.addTooltip("This field can't be empty");
+ }
+var Doin_business_As = ZDK.Page.getField('Doing_Business_As');
+if (Doin_business_As.getValue() == null)
+{
+    Doin_business_As.addTooltip("This field can't be empty");
+}
+var Federal_tax_id = ZDK.Page.getField('Federal_Tax_ID');
+if (Federal_tax_id.getValue() == null)
+{
+    Federal_tax_id.addTooltip("This field can't be empty");
+}
+var Business_website = ZDK.Page.getField('Business_Websit');
+if (Business_website.getValue() == null)
+{
+     Business_website.addTooltip("This field can't be empty");
+ }
+var Business_start_date = ZDK.Page.getField('Business_Star_Date');
+if (Business_start_date.getValue() == null)
+{
+     Business_start_date.addTooltip("This field can't be empty");
+ }
+var State_of_incorporation = ZDK.Page.getField('State_of_incorporation');
+if (State_of_incorporation.getValue() == null)
+{
+     State_of_incorporation.addTooltip("This field can't be empty");
+ }
+var Mailing_address = ZDK.Page.getField('Mailing_Address');
+if (Mailing_address.getValue() == null)
+{
+    Mailing_address.addTooltip("This field can't be empty");
+}
+var Mailing_zip_code = ZDK.Page.getField('Mailing_Zip_Code');
+if (Mailing_zip_code.getValue() == null)
+{
+     Mailing_zip_code.addTooltip("This field can't be empty");
+ }
+var Rent_own_business = ZDK.Page.getField('Rent_or_Own_Business');
+if (Rent_own_business.getValue() == null)
+{
+     Rent_own_business.addTooltip("This field can't be empty");
+ }
+var Rent_mortgage_amt = ZDK.Page.getField('Rent_Mortgage_Amount');
+if (Rent_mortgage_amt.getValue() == null)
+{
+    Rent_mortgage_amt.addTooltip("This field can't be empty");
+}
+var Business_property_val = ZDK.Page.getField('Property_Business_Value');
+if (Business_property_val.getValue() == null)
+{
+    Business_property_val.addTooltip("This field can't be empty");
+}
+var Annual_gross_sale = ZDK.Page.getField('Annual_Gross_Sales');
+if (Annual_gross_sale.getValue() == null)
+{
+Annual_gross_sale.addTooltip("This field can't be empty");
+}
+var Monthly_gross_sale = ZDK.Page.getField('Monthly_Gross_Sales1');
+if (Monthly_gross_sale.getValue() == null)
+{
+    Monthly_gross_sale.addTooltip("This field can't be empty");
+}
+ // Owner Information //
+
+var Ownership_percentage = ZDK.Page.getField('Ownership_Percentage');
+if (Ownership_percentage.getValue() == null)
+{
+    Ownership_percentage.addTooltip("This field can't be empty");
+}
+// var First_name = ZDK.Page.getField('First_Name');
+// var Last_name = ZDK.Page.getField('Last_Name');
+// if (First_name.getValue() == null || Last_name.getValue() == null )
+// {
+//     First_name.addTooltip("This field can't be empty");
+//     Last_name.addTooltip("This field can't be empty");
+// }
+var Owner_Street = ZDK.Page.getField('Street');
+if (Owner_Street.getValue() == null)
+{
+    Owner_Street.addTooltip("This field can't be empty");
+}
+var Owner_City = ZDK.Page.getField('City');
+if (Owner_City.getValue() == null)
+{
+    Owner_City.addTooltip("This field can't be empty");
+}
+var Owner_state = ZDK.Page.getField('Lead_State');
+if (Owner_state.getValue() == null)
+{
+    Owner_state.addTooltip("This field can't be empty");
+}
+var Owner_zipcode = ZDK.Page.getField('Zip_Code');
+if (Owner_zipcode.getValue() == null)
+{
+    Owner_zipcode.addTooltip("This field can't be empty");
+}
+var Owner_mobile = ZDK.Page.getField('Mobile');
+if (Owner_mobile.getValue() == null)
+{
+    Owner_mobile.addTooltip("This field can't be empty");
+}
+
+var Owner_email = ZDK.Page.getField('Email');
+if (Owner_email.getValue() == null)
+{
+    Owner_email.addTooltip("This field can't be empty");
+}
+
+var Owner_ssn = ZDK.Page.getField('Owner_SSN');
+if (Owner_ssn.getValue() == null)
+{
+    Owner_ssn.addTooltip("This field can't be empty");
+}
+var Date_of_birth = ZDK.Page.getField('Date_Of_Birth');
+if (Date_of_birth.getValue() == null)
+{
+    Date_of_birth.addTooltip("This field can't be empty");
+}
+var Credit_score_fico = ZDK.Page.getField('Credit_Score_1');
+if (Credit_score_fico.getValue() == null)
+{
+    Credit_score_fico.addTooltip("This field can't be empty");
+}
+
+var Rent_own_home = ZDK.Page.getField('Rent_or_Own_Home');
+if (Rent_own_home.getValue() == null)
+{
+    Rent_own_home.addTooltip("This field can't be empty");
+}
+var Property_home_value = ZDK.Page.getField('Property_Home_Value');
+if (Property_home_value.getValue() == null)
+{
+    Property_home_value.addTooltip("This field can't be empty");
+}
+var Balance_left_home_mortgage = ZDK.Page.getField('Balance_left_on_Home_Mortgage');
+if (Balance_left_home_mortgage.getValue() == null)
+{
+    Balance_left_home_mortgage.addTooltip("This field can't be empty");
+}
+// Co Owner Information //
+CoOwner_firstname = ZDK.Page.getField('Co_Owner_First_Name');
+CoOwner_lastname = ZDK.Page.getField('Co_Owner_Last_Name');
+if (CoOwner_firstname.getValue() != null || CoOwner_lastname.getValue() != null)
+{
+    var Coownership_percentage = ZDK.Page.getField('Co_Ownership_Percentage');
+    if (Coownership_percentage.getValue() == null)
+    {
+        Coownership_percentage.addTooltip("This field can't be empty");
+    }
+
+    var Coowner_street = ZDK.Page.getField('Co_Owner_Street');
+    if (Coowner_street.getValue() == null)
+    {
+        Coowner_street.addTooltip("This field can't be empty");
+    }
+
+    var Coowner_city = ZDK.Page.getField('Co_Owner_City');
+    if (Coowner_city.getValue() == null)
+    {
+        Coowner_city.addTooltip("This field can't be empty");
+    }
+    var Coowner_state = ZDK.Page.getField('Co_Owner_State');
+    if (Coowner_state.getValue() == null)
+    {
+        Coowner_state.addTooltip("This field can't be empty");
+    }
+
+    var Coowner_zipcode = ZDK.Page.getField('Co_Owner_Zip_Code');
+    if (Coowner_zipcode.getValue() == null)
+    {
+        Coowner_zipcode.addTooltip("This field can't be empty");
+    }
+
+    var Coowner_ssn = ZDK.Page.getField('Co_Owner_Social');
+    if (Coowner_ssn.getValue() == null)
+    {
+        Coowner_ssn.addTooltip("This field can't be empty");
+    }
+    var Coowner_dob = ZDK.Page.getField('Co_Owner_Date_Of_Birth');
+    if (Coowner_dob.getValue() == null)
+    {
+        Coowner_dob.addTooltip("This field can't be empty");
+    }
+
+     var Coowner_phone = ZDK.Page.getField('Co_Owner_Phone');
+    if (Coowner_phone.getValue() == null)
+    {
+        Coowner_phone.addTooltip("This field can't be empty");
+    }
+     var Coowner_dob = ZDK.Page.getField('Co_Owner_Date_Of_Birth');
+    if (Coowner_dob.getValue() == null)
+    {
+        Coowner_dob.addTooltip("This field can't be empty");
+    }
+     var Coowner_Email = ZDK.Page.getField('Co_Owner_Email');
+    if (Coowner_Email.getValue() == null)
+    {
+        Coowner_Email.addTooltip("This field can't be empty");
+    }
+    if (Coownership_percentage.getValue() == null ||  Coowner_street.getValue() == null ||  Coowner_city.getValue() == null || Coowner_state.getValue() == null || Coowner_zipcode.getValue() == null || Coowner_ssn.getValue() == null || Coowner_dob.getValue() == null || Coowner_phone.getValue() == null ||  Coowner_dob.getValue() == null || Coowner_Email.getValue() == null )
+    {
+ZDK.Page.getButtons().find(a => a.getLabel() == "Convert").disable();
+    }
+    else
+    {
+ZDK.Page.getButtons().find(a => a.getLabel() == "Convert").enable();
+    }
+
+}
+
+if (Company == null || Legal_entity.getValue() == null || Business_phone.getValue() == null || Business_email_address.getValue() == null || Get_Industry.getValue() == null || Physical_address.getValue() == null || Physical_city.getValue() == null || Physical_state.getValue() == null || Physical_zipcode.getValue() == null || Credit_card_processor.getValue() == null || Credit_card_monthly_volume.getValue() == null || Doin_business_As.getValue() == null || Federal_tax_id.getValue() == null || Business_website.getValue() == null || Business_start_date.getValue() == null || State_of_incorporation.getValue() == null
+|| Mailing_address.getValue() == null || Mailing_zip_code.getValue() == null || Rent_own_business.getValue() == null || Rent_mortgage_amt.getValue() == null
+|| Business_property_val.getValue() == null || Annual_gross_sale.getValue() == null || Ownership_percentage.getValue() == null || Owner_Street.getValue() == null || Owner_City.getValue() == null  || Owner_state.getValue() == null || Owner_zipcode.getValue() == null  || Owner_mobile.getValue() == null || Owner_email.getValue() == null || Owner_ssn.getValue() == null || Date_of_birth.getValue() == null || Credit_score_fico.getValue() == null || Rent_own_home.getValue() == null || Property_home_value.getValue() == null || Balance_left_home_mortgage.getValue() == null )
+{
+
+    //ZDK.Client.showAlert("Disable");
+    ZDK.Page.getButtons().find(a => a.getLabel() == "Convert").disable();
+   
+
+}
+else {
+
+    //ZDK.Client.showAlert("enable");
+    ZDK.Page.getButtons().find(a => a.getLabel() == "Convert").enable();
+    
+}
+
