@@ -1,0 +1,665 @@
+// Type Here
+wr = zoho.crm.getRecordById("Website_Request",id);
+wr_payload = wr.getJSON("Payload");
+info wr_payload;
+if(wr_payload.getJSON("Layouts").isNull() == false)
+{
+	Layout = wr_payload.getJSON("Layouts");
+}
+else
+{
+	Layout = wr.getJSON("Layouts");
+}
+// info Layout;
+if(wr_payload.isNull() == false)
+{
+	Mortgage_Property_Description = wr_payload.getJSON("Property_Description");
+	wr_creator = wr.getJSON("Creator_ID");
+	if(wr_creator.isNull() == false)
+	{
+		wr_creator_id = wr_creator.toNumber();
+		//info wr_payload;
+		// 		info Layout;
+		// Define WR variables wr_variable-name (Mortgage Layout)
+		Affiliate = wr_payload.getJSON("Affiliate").trim();
+		info "Affiliate: " + Affiliate;
+		Affiliatepid = wr_payload.getJSON("Affiliate_Partner_ID");
+		Email = wr_payload.getJSON("Email");
+		// Translate Mortgage Type from API
+		mortgage_type = wr_payload.getJSON("Mortgage_Type");
+		if(mortgage_type == "New Purchase")
+		{
+			mortgage_type_c = "Purchase";
+		}
+		if(Affiliate.isNull() == false || Affiliatepid.isNull() == false)
+		{
+			search_affiliate = zoho.crm.searchRecords("Affiliates","((Email:equals:" + Affiliate + ")OR(Partner_ID:equals:" + Affiliatepid + ")OR(Name:equals:" + Affiliate + ")OR(Partner_ID:equals:" + Affiliate + "))");
+			if(search_affiliate.size() > 0 && search_affiliate.getJSON("id").isNull() == false)
+			{
+				info "Email: " + Email;
+				getFieldsJSON = standalone.sa_fieldsJsonLeadsWR();
+				lead_fields_mortgage = getFieldsJSON.get("crmAPIResponse").get("body").get("lead_crm_mortgage_fields").toList();
+				//"Lead_State",
+				lead_fields_mortgage = {"Ownership","Mailing_State","Co_Owner_State2","Mailing_Address","Co_Owner_Credit_Score","Company","Email","Co_Owner_Last_Name","Street","Zip_Code","Co_Ownership_Percentage","City","Last_Name","Phone","Mailing_City","Co_Owner_City","Mobile","Co_Owner_Street","Mailing_Zip_Code","Co_Owner_Zip_Code","Co_Owner_Email","Co_Owner_First_Name","Affiliate","Co_Owner_TIB_Years","Are_you_a_veteran","Do_you_Currently_Rent_or_Own","Any_outstanding_Business_Loan_Debt","Do_you_have_any_Judgements_or_Liens","Have_you_ever_had_a_Bankruptcy_or_Foreclosure","Co_Owner_Have_you_ever_had_a_Bankruptcy_or_Foreclo","Co_Owner_Do_you_Currently_Rent_or_Own","When_do_you_plan_on_purchasing_the_property","Purchase_Price","Currently_in_an_interest_only_or_balloon_note","Are_you_current_on_your_mortgage_payments","What_is_your_Existing_Mortgage_Debt","Monthly_Taxes","Property_Use","House_Status_Do_you_need_to_find_a_house_to_buy","IF_REFI_Property_Value","IF_REFI_Current_Rate","Monthly_Insurance","Notes"};
+				headers_data = Map();
+				map_data = Map();
+				First_Name = Map();
+				queryMap = Map();
+				queryMap.put("select_query","select Last_Name, First_Name, Email from Contacts where Email = '" + Email + "' limit 2");
+				search_contact = invokeurl
+				[
+					url :"https://www.zohoapis.com/crm/v5/coql"
+					type :POST
+					parameters:queryMap.toString()
+					connection:"XXXXXXXXXX"
+				];
+				//search_contact = zoho.crm.searchRecords("Leads","(Email:equals:" + Email + ")",1,200,{"converted":true});
+				if(search_contact.size() > 0 && search_contact.getJSON("data").size() > 0)
+				{
+					contact_id = search_contact.getJSON("data").getJSON("id");
+					info "contact_id: " + contact_id;
+					info standalone.add_task(contact_id.toNumber(),"Contacts");
+					updateWR = Map();
+					updateWR.put("Contact_Record",contact_id);
+					updateWR.put("Partner_Status","Active");
+					updateWR.put("Status","Rejected");
+					WRupdated = zoho.crm.updateRecord("Website_Request",id,updateWR,{"trigger":{"workflow"}});
+					info "WRupdated: " + WRupdated;
+					info standalone.add_task(contact_id.toNumber(),"Contacts");
+				}
+				else
+				{
+					lead_id = "";
+					queryMap = Map();
+					queryMap.put("select_query","select Last_Name, First_Name, Full_Name, Email from Leads where Email = '" + Email + "' limit 2");
+					search_lead = invokeurl
+					[
+						url :"https://www.zohoapis.com/crm/v5/coql"
+						type :POST
+						parameters:queryMap.toString()
+						connection:"XXXXXXXXXX"
+					];
+					info search_lead;
+					if(search_lead.size() > 0 && search_lead.getJSON("data").size() > 0)
+					{
+						info search_lead.get(0);
+						lead_id = search_lead.getJSON("data").getJSON("id");
+						info "lead exists lead_id: " + lead_id;
+						updateWR = Map();
+						updateWR.put("Lead_record",lead_id);
+						updateWR.put("Partner_Status","Active");
+						updateWR.put("Status","Rejected");
+						WRupdated = zoho.crm.updateRecord("Website_Request",id,updateWR,{"trigger":{"workflow"}});
+						info "WRupdated: " + WRupdated;
+						info standalone.add_task(lead_id.toNumber(),"Leads");
+					}
+					else
+					{
+						// 			Layout = "Mortgage";
+						// 			info "Layout: " + Layout;
+						// 			getFieldsJSON = standalone.sa_fieldsJsonLeadsWR();
+						// 			lead_fields_mortgage = getFieldsJSON.get("crmAPIResponse").get("body").get("lead_crm_mortgage_fields").toList();
+						newLead = Map();
+						// Re Mapping for API
+						newLead.put("Affiliate",ifNull(wr_payload.getJSON("Affiliate"),""));
+						newLead.put("First_Name",ifNull(wr_payload.getJSON("First_Name"),""));
+						newLead.put("Last_Name",ifNull(wr_payload.getJSON("Last_Name"),""));
+						newLead.put("Email",ifNull(wr_payload.getJSON("Email"),""));
+						phonestar = wr_payload.getJSON("Phone");
+						if(phonestar == null)
+						{
+							phone = wr_payload.getJSON("Business_Phone");
+						}
+						else
+						{
+							phone = wr_payload.getJSON("Phone");
+						}
+						newLead.put("Phone",phone);
+						newLead.put("Residential_Transaction_Type",ifNull(wr_payload.getJSON("Residential_Transaction_Type"),""));
+						newLead.put("Property_Description",ifNull(wr_payload.getJSON("Property_Description"),""));
+						// 			newLead.put("Lead_State",ifNull(wr_payload.getJSON("Lead_State"),""));
+						newLead.put("Monthly_Gross_Income_2",ifNull(wr_payload.getJSON("What_is_your_monthly_gross_income"),""));
+						newLead.put("Credit_Score_1",ifNull(wr_payload.getJSON("Credit_Score").toString(),""));
+						newLead.put("Company",ifNull(wr_payload.getJSON("Company"),""));
+						newLead.put("Time_in_Business1",ifNull(wr_payload.getJSON("Time_in_Business_Years").toString(),""));
+						newLead.put("Loan_Amount_Requested",ifNull(wr_payload.getJSON("Loan_Amount_Requested"),""));
+						info wr_payload.getJSON("Loan_Amount_Requested");
+						////////////// ********************************************** ///////////////////////////////////
+						newLead.put("Date_Of_Birth",ifNull(wr_payload.getJSON("Date_Of_Birth.toString"),""));
+						newLead.put("Annual_Gross_Sales",ifNull(wr_payload.getJSON("Annual_Gross_Sales").toString(),""));
+						newLead.put("Federal_Tax_ID",ifNull(wr_payload.getJSON("Federal_Tax_ID"),""));
+						newLead.put("Mobile",ifNull(wr_payload.getJSON("Mobile"),""));
+						newLead.put("Subject_Property_Stat",ifNull(wr_payload.getJSON("Subject_Property_Stat"),""));
+						newLead.put("Best_Time_to_contact",ifNull(wr_payload.getJSON("Best_Time_to_contact"),""));
+						newLead.put("Requested_Product",ifNull(wr_payload.getJSON("Requested_Product"),""));
+						newLead.put("Working_Capital_Being_Requested_For",ifNull(wr_payload.getJSON("Working_Capital_Being_Requested_For"),""));
+						newLead.put("Legal_Entity",ifNull(wr_payload.getJSON("Legal_Entity"),""));
+						// 						newLead.put("Business_Phone",ifNull(wr_payload.getJSON("Business_Phone_Number"),""));
+						newLead.put("Business_Email_Address",ifNull(wr_payload.getJSON("Business_Email_Address"),""));
+						newLead.put("Industry",ifNull(wr_payload.getJSON("Industry"),""));
+						//newLead.put("State_of_incorporation",ifNull(wr_payload.getJSON("State_of_incorporation"),""));
+						newLead.put("Physical_Address",ifNull(wr_payload.getJSON("Physical_Address"),""));
+						newLead.put("Physical_City",ifNull(wr_payload.getJSON("Physical_City"),""));
+						newLead.put("Physical_State",ifNull(wr_payload.getJSON("Physical_State"),""));
+						newLead.put("Physical_Zip_Code",ifNull(wr_payload.getJSON("Physical_Zip_Code"),""));
+						newLead.put("Doing_Business_As",ifNull(wr_payload.getJSON("Doing_Business_As"),""));
+						//newLead.put("Website",ifNull(wr_payload.getJSON("Website"),""));
+						newLead.put("Fax",ifNull(wr_payload.getJSON("Fax"),""));
+						if(wr_payload.getJSON("Business_Start_Date") != null)
+						{
+							newLead.put("Business_Star_Date",ifNull(wr_payload.getJSON("Business_Start_Date").toDate(),""));
+						}
+						newLead.put("Mailing_Address",ifNull(wr_payload.getJSON("Mailing_Address"),""));
+						newLead.put("Mailing_City",ifNull(wr_payload.getJSON("Mailing_City"),""));
+						newLead.put("Mailing_State",ifNull(wr_payload.getJSON("Mailing_State"),""));
+						newLead.put("Mailing_Zip_Code",ifNull(wr_payload.getJSON("Mailing_Zip_Code"),""));
+						newLead.put("Rent_or_Own_Business",ifNull(wr_payload.getJSON("Rent_or_Own_Business"),""));
+						newLead.put("Business_Property_Value",ifNull(wr_payload.getJSON("Business_Property_Value"),""));
+						newLead.put("Rent_Mortgage_Amount",ifNull(wr_payload.getJSON("Rent_Mortgage_Amount"),""));
+						newLead.put("Landlord_Mortgage_Company_Contact",ifNull(wr_payload.getJSON("Landlord_Mortgage_Company_Contact"),""));
+						newLead.put("Open_Bankruptcy",ifNull(wr_payload.getJSON("Open_Bankruptcy"),""));
+						newLead.put("Monthly_Gross_Sales",ifNull(wr_payload.getJSON("Monthly_Gross_Sales"),""));
+						newLead.put("First_Name",ifNull(wr_payload.getJSON("First_Name"),""));
+						newLead.put("Street",ifNull(wr_payload.getJSON("Street"),""));
+						newLead.put("City",ifNull(wr_payload.getJSON("City"),""));
+						newLead.put("Lead_State",ifNull(wr_payload.getJSON("Lead_State"),""));
+						newLead.put("Zip_Code",ifNull(wr_payload.getJSON("Zip_Code"),""));
+						///// Newly Mapped Fields ////
+						newLead.put("Co_Owner_State2",ifNull(wr_payload.getJSON("Co_Owner_State2"),""));
+						newLead.put("Co_Owner_Credit_Score",ifNull(wr_payload.getJSON("Co_Owner_Credit_Score"),""));
+						newLead.put("Co_Owner_Last_Name",ifNull(wr_payload.getJSON("Co_Owner_Last_Name"),""));
+						newLead.put("Co_Ownership_Percentage",ifNull(wr_payload.getJSON("Co_Ownership_Percentage"),""));
+						newLead.put("Co_Owner_City",ifNull(wr_payload.getJSON("Co_Owner_City"),""));
+						//newLead.put("Mobile",ifNull(wr_payload.getJSON("Mobile"),""));
+						newLead.put("Co_Owner_Street",ifNull(wr_payload.getJSON("Co_Owner_Street"),""));
+						newLead.put("Co_Owner_Zip_Code",ifNull(wr_payload.getJSON("Co_Owner_Zip_Code"),""));
+						newLead.put("Co_Owner_Email",ifNull(wr_payload.getJSON("Co_Owner_Email_Address"),""));
+						newLead.put("Co_Owner_First_Name",ifNull(wr_payload.getJSON("Co_Owner_First_Name"),""));
+						newLead.put("Co_Owner_Time_in_Business_Years",ifNull(wr_payload.getJSON("Co_Owner_Time_in_Business_Years"),""));
+						newLead.put("Are_you_a_veteran",ifNull(wr_payload.getJSON("Are_you_a_veteran"),""));
+						newLead.put("Do_you_Currently_Rent_or_Own",ifNull(wr_payload.getJSON("Do_you_Currently_Rent_or_Own"),""));
+						newLead.put("Any_outstanding_Business_Loan_Debt",ifNull(wr_payload.getJSON("Any_outstanding_Business_Loan_Debt"),""));
+						newLead.put("Do_you_have_any_Judgements_or_Liens",ifNull(wr_payload.getJSON("Do_you_have_any_Judgements_or_Liens"),""));
+						newLead.put("Have_you_ever_had_a_Bankruptcy_or_Foreclosure",ifNull(wr_payload.getJSON("Have_you_ever_had_a_Bankruptcy_or_Foreclosure"),""));
+						newLead.put("Co_Owner_Have_you_ever_had_a_Bankruptcy_or_Foreclo",ifNull(wr_payload.getJSON("Co_Owner_Have_you_ever_had_a_Bankruptcy_or_Foreclo"),""));
+						newLead.put("Co_Owner_Do_you_Currently_Rent_or_Own",ifNull(wr_payload.getJSON("Co_Owner_Do_you_Currently_Rent_or_Own"),""));
+						newLead.put("House_Status_Do_you_need_to_find_a_house_to_buy",ifNull(wr_payload.getJSON("When_do_you_plan_on_purchasing_the_property"),""));
+						newLead.put("IF_PURCHASE_Purchase_Price",ifNull(wr_payload.getJSON("IF_PURCHASE_Purchase_Price").toString(),""));
+						if(wr_payload.getJSON("Amount_you_have_to_put_down").isNull() == false)
+						{
+							newLead.put("Amount_you_have_to_put_down",ifNull(wr_payload.getJSON("Amount_you_have_to_put_down").toString(),""));
+						}
+						if(wr_payload.getJSON("IF_REFI_Balance_Left_on_Mortgage").isNull() == false)
+						{
+							// 							bal = wr_payload.getJSON("IF_REFI_Balance_Left_on_Mortgage").remove(",");
+							bal = wr_payload.getJSON("IF_REFI_Balance_Left_on_Mortgage").toString();
+							newLead.put("IF_REFI_Balance_Left_on_Mortgage",ifNull(bal,""));
+						}
+						newLead.put("Currently_in_an_interest_only_or_balloon_note",ifNull(wr_payload.getJSON("Currently_in_an_interest_only_or_balloon_note"),""));
+						newLead.put("Are_you_current_on_your_mortgage_payments",ifNull(wr_payload.getJSON("Are_you_current_on_your_mortgage_payments"),""));
+						newLead.put("Monthly_Taxes",ifNull(wr_payload.getJSON("Monthly_Taxes"),""));
+						newLead.put("Mortgage_Type",ifNull(wr_payload.getJSON("Mortgage_Type"),""));
+						newLead.put("Property_Use",ifNull(wr_payload.getJSON("Property_Use"),""));
+						newLead.put("House_Status_Do_you_need_to_find_a_house_to_buy",ifNull(wr_payload.getJSON("When_do_you_plan_on_purchasing_the_property"),""));
+						newLead.put("IF_REFI_Property_Value",ifNull(wr_payload.getJSON("IF_REFI_Property_Value"),""));
+						newLead.put("IF_REFI_Current_Rate",ifNull(wr_payload.getJSON("IF_REFI_Current_Rate"),""));
+						newLead.put("Monthly_Insurance",ifNull(wr_payload.getJSON("Monthly_Insurance"),""));
+						newLead.put("Comments",ifNull(wr_payload.getJSON("Comments"),""));
+						newLead.put("Property_Use",ifNull(wr_payload.getJSON("Property_Use"),""));
+						newLead.put("Co_Owner_Phone",ifNull(wr_payload.getJSON("Co_Owner_Mobile"),""));
+						newLead.put("Co_Owner_Social",ifNull(wr_payload.getJSON("Co_Owner_SSN"),""));
+						newLead.put("Phone_Type",ifNull(wr_payload.getJSON("Phone_Type"),""));
+						//newLead.put("Credit_Card_Monthly_Volume",ifNull(wr_payload.getJSON("Credit_Card_Monthly_Volume"),""));
+						newLead.put("Owner_SSN",ifNull(wr_payload.getJSON("Owner_SSN"),""));
+						newLead.put("Property_Home_Value",ifNull(wr_payload.getJSON("Property_Home_Value"),""));
+						if(wr_payload.getJSON("Co_Owner_Date_Of_Birth") != null)
+						{
+							newLead.put("Co_Owner_Date_Of_Birth",ifNull(wr_payload.getJSON("Co_Owner_Date_Of_Birth").toDate(),""));
+						}
+						newLead.put("MCA_or_loan_accounts",ifNull(wr_payload.getJSON("MCA_or_loan_accounts"),""));
+						newLead.put("Balance_left_on_Home_Mortgage",ifNull(wr_payload.getJSON("Balance_left_on_Home_Mortgage"),""));
+						// 						newLead.put("Lead_Source",ifNull(wr_payload.getJSON("Source_Type"),""));
+						newLead.put("Ownership",ifNull(wr_payload.getJSON("Ownership"),""));
+						newLead.put("Property_Business_Value",ifNull(wr_payload.getJSON("Business_Property_Value"),""));
+						newLead.put("Monthly_Gross_Sales1",ifNull(wr_payload.getJSON("Monthly_Gross_Sales"),""));
+						newLead.put("Residential_Transaction_Type",ifNull(wr_payload.getJSON("Residential_Transaction_Type"),""));
+						newLead.put("Are_you_operating_a_Business_at_this_property",ifNull(wr_payload.getJSON("Are_you_operating_a_Business_at_this_property"),""));
+						newLead.put("IF_PURCHASE_Purchase_Price",ifNull(wr_payload.getJSON("Purchase_Price").toString(),""));
+						newLead.put("Annual_Gross_Sales",ifNull(wr_payload.getJSON("Annual_Gross_Sales").toString(),""));
+						newLead.put("Mortgage_Type",ifNull(wr_payload.getJSON("Mortgage_Type"),""));
+						newLead.put("Lead_TIB",ifNull(wr_payload.getJSON("Lead_TIB"),wr_payload.getJSON("Time_in_Business1")));
+						//
+						if(Layout == "Mortgage" || Mortgage_Property_Description.isNull() == false)
+						{
+							newLead.put("Layout","5083203000000742009");
+						}
+						else
+						{
+							newLead.put("Layout","5083203000000603001");
+						}
+						newLead.put("Lead_Status","New");
+						if(wr_payload.getJSON("Lead_Source") == "Popcrumbs")
+						{
+							newLead.put("Lead_Source","Popcrumbs");
+						}
+						else if(Affiliate == "finance@clvisual.com" || Affiliatepid == "T-23552223-P")
+						{
+							newLead.put("Lead_Source","CLV Go");
+						}
+						else
+						{
+							newLead.put("Lead_Source","Affiliate");
+						}
+						affiliate_id = search_affiliate.get(0).getJSON("id");
+						if(search_affiliate.get(0).getJSON("Affiliates_Manager").isNull() == false)
+						{
+							affiliate_manager_id = search_affiliate.get(0).getJSON("Affiliates_Manager").getJSON("id");
+							newLead.put("Affiliates_Manager",affiliate_manager_id.toNumber());
+							if(search_affiliate.get(0).getJSON("New_Affiliate_Partner_ID").isNull() == false)
+							{
+								newLead.put("New_Affiliate_Partner_ID",search_affiliate.get(0).getJSON("New_Affiliate_Partner_ID"));
+							}
+						}
+						if(search_affiliate.get(0).getJSON("Main_Manager").isNull() == false)
+						{
+							new_Main_Manager = search_affiliate.get(0).getJSON("Main_Manager").getJSON("id");
+							newLead.put("Main_Manager",new_Main_Manager.toNumber());
+							newLead.put("New_Manager_Partner_ID",ifnull(search_affiliate.get(0).getJSON("New_Main_Manager_Partner_ID"),""));
+						}
+						newLead.put("Affiliate",affiliate_id);
+						newLead.put("Partner_ID",search_affiliate.get(0).getJSON("Partner_ID"));
+						newLead.put("Lead_Creator_ID",wr.get("Creator_ID"));
+						newLead.put("Preferred_Language",ifnull(wr_payload.getJSON("Preferred_Language"),""));
+						newLead.put("Date_Posted_1",ifnull(wr_payload.getJSON("Date_Posted_1"),""));
+						newLead.put("ULID",ifnull(wr_payload.getJSON("ULID"),""));
+						//newLead.put("Credit_Card_Monthly_Volume",ifnull(wr_payload.getJSON("Credit_Card_Monthly_Volume"),""));
+						newLead.put("Num_of_Employees",ifnull(wr_payload.getJSON("Num_of_Employees"),""));
+						data_list = List();
+						data_map = Map();
+						info "newLead: " + newLead;
+						if(search_affiliate.getJSON("Owner").getJSON("name") == "Leeat Shalom" || search_affiliate.getJSON("Owner").getJSON("name") == "Chris Bolos" || search_affiliate.getJSON("Owner").getJSON("name") == "Jesse Guido" || search_affiliate.getJSON("Owner").getJSON("name") == "Paul Bisono" || search_affiliate.getJSON("Owner").getJSON("name") == "Heather Jankowski" || search_affiliate.getJSON("Owner").getJSON("name") == "Mark Hanna" || search_affiliate.getJSON("Owner").getJSON("name") == "TAG Developer")
+						{
+							if(Affiliate == "finance@clvisual.com" || Affiliatepid == "T-23552223-P")
+							{
+								newLead.put("Owner","5083203000002320001");
+							}
+							data_list.add(newLead);
+							data_map.put("data",data_list);
+							triglist = List();
+							triglist.add("workflow");
+							data_map.put("lar_id","5083203000044022017");
+							data_map.put("trigger",triglist);
+						}
+						else
+						{
+							if(Affiliate == "finance@clvisual.com" || Affiliatepid == "T-23552223-P")
+							{
+								newLead.put("Owner","5083203000002320001");
+							}
+							else
+							{
+								newLead.put("Owner",search_affiliate.getJSON("Owner").getJSON("id"));
+							}
+							data_list.add(newLead);
+							triglist = List();
+							triglist.add("workflow");
+							data_map.put("data",data_list);
+							data_map.put("trigger",triglist);
+						}
+						leadCreated = invokeurl
+						[
+							url :"https://www.zohoapis.com/crm/v4/Leads"
+							type :POST
+							parameters:data_map + ""
+							connection:"XXXXXXXXXX"
+						];
+						info "leadCreated: " + leadCreated;
+						status = leadCreated.getJSON("data").getJSON("details").getJSON("status");
+						lead_id = leadCreated.getJSON("data").getJSON("details").getJSON("id");
+						info "lead created lead_id: " + lead_id;
+						info "sa_CreateLeadOnCreator";
+						// 					info standalone.sa_CreateLeadOnCreator(lead_id,"Accepted","lead",id);
+						updateWR = Map();
+						updateWR.put("Lead_record",lead_id);
+						if(lead_id.isEmpty() == false)
+						{
+							updateWR.put("Status","Accepted");
+						}
+						else
+						{
+							updateWR.put("Status","Rejected");
+						}
+						updateWR.put("Email",wr_payload.getJSON("Email"));
+						updateWR.put("Partner_Status","Active");
+						WRupdated = zoho.crm.updateRecord("Website_Request",id,updateWR,{"trigger":{"workflow"}});
+						info "WRupdated: " + WRupdated;
+					}
+				}
+			}
+		}
+		else
+		{
+			info "Affiliate is empty!";
+			WRupdated = zoho.crm.updateRecord("Website_Request",id,{"Partner_Status":"Inactive"});
+			info "WRupdated: " + WRupdated;
+		}
+	}
+	else
+	{
+		Affiliates = wr_payload.getJSON("Affiliate").trim();
+		// 		info "Affiliate: " + Affiliates;
+		Affiliatepid = wr_payload.getJSON("Affiliate_Partner_ID");
+		// 				criteria="((Email:equals:" + Affiliates + ")OR(Partner_ID:equals:" + wr_payload.getJSON("Affiliate_Partner_ID")+ ")OR(Name:equals:" + Affiliates + "))";
+		// 				info criteria ;
+		search_affiliate = zoho.crm.searchRecords("Affiliates","((Email:equals:" + Affiliates + ")OR(Partner_ID:equals:" + wr_payload.getJSON("Affiliate_Partner_ID") + ")OR(Name:equals:" + Affiliates + ")OR(Partner_ID:equals:" + Affiliates + "))");
+		info "Search >>" + search_affiliate;
+		if(search_affiliate.size() > 0 && search_affiliate.getJSON("id").isNull() == false && (Affiliates.isNull() == false || Affiliatepid.isNull() == false))
+		{
+			info wr_payload.getJSON("Email");
+			getFieldsJSON = standalone.sa_fieldsJsonLeadsWR();
+			lead_fields_mortgage = getFieldsJSON.get("crmAPIResponse").get("body").get("lead_crm_mortgage_fields").toList();
+			//"Lead_State",
+			lead_fields_mortgage = {"Ownership","Mailing_State","Co_Owner_State2","Mailing_Address","Co_Owner_Credit_Score","Company","Email","Co_Owner_Last_Name","Street","Zip_Code","Co_Ownership_Percentage","City","Last_Name","Phone","Mailing_City","Co_Owner_City","Mobile","Co_Owner_Street","Mailing_Zip_Code","Co_Owner_Zip_Code","Co_Owner_Email","Co_Owner_First_Name","Affiliate","Co_Owner_TIB_Years","Are_you_a_veteran","Do_you_Currently_Rent_or_Own","Any_outstanding_Business_Loan_Debt","Do_you_have_any_Judgements_or_Liens","Have_you_ever_had_a_Bankruptcy_or_Foreclosure","Co_Owner_Have_you_ever_had_a_Bankruptcy_or_Foreclo","Co_Owner_Do_you_Currently_Rent_or_Own","When_do_you_plan_on_purchasing_the_property","Purchase_Price","Currently_in_an_interest_only_or_balloon_note","Are_you_current_on_your_mortgage_payments","What_is_your_Existing_Mortgage_Debt","Monthly_Taxes","Property_Use","House_Status_Do_you_need_to_find_a_house_to_buy","IF_REFI_Property_Value","IF_REFI_Current_Rate","Monthly_Insurance","Notes"};
+			headers_data = Map();
+			map_data = Map();
+			First_Name = Map();
+			queryMap = Map();
+			queryMap.put("select_query","select Last_Name, First_Name, Full_Name, Email from Leads where Email = '" + wr_payload.getJSON("Email") + "' limit 2");
+			search_lead = invokeurl
+			[
+				url :"https://www.zohoapis.com/crm/v5/coql"
+				type :POST
+				parameters:queryMap.toString()
+				connection:"zoho_crm"
+			];
+			if(search_lead.size() > 0 && search_lead.getJSON("data").size() > 0 && wr_payload.getJSON("Email") != "z*****1@icloud.com")
+			{
+				lead_id = search_lead.getJSON("data").getJSON("id");
+				info "lead created lead_id: " + lead_id;
+				// 				info "sa_CreateLeadOnCreator";
+				updateWR = Map();
+				updateWR.put("Lead_record",lead_id);
+				updateWR.put("Partner_Status","Active");
+				updateWR.put("Status","Rejected");
+				WRupdated = zoho.crm.updateRecord("Website_Request",id,updateWR,{"trigger":{"workflow"}});
+				info "WRupdated: " + WRupdated;
+				info standalone.add_task(lead_id.toNumber(),"Leads");
+			}
+			else
+			{
+				queryMap = Map();
+				queryMap.put("select_query","select Last_Name, First_Name, Email from Contacts where Email = '" + Email + "' limit 2");
+				search_contact = invokeurl
+				[
+					url :"https://www.zohoapis.com/crm/v5/coql"
+					type :POST
+					parameters:queryMap.toString()
+					connection:"XXXXXXXXXX"
+				];
+				//search_contact = zoho.crm.searchRecords("Leads","(Email:equals:" + Email + ")",1,200,{"converted":true});
+				if(search_contact.size() > 0 && search_contact.getJSON("data").size() > 0)
+				{
+					contact_id = search_contact.getJSON("data").getJSON("id");
+					info "contact_id: " + contact_id;
+					info standalone.add_task(contact_id.toNumber(),"Contacts");
+					updateWR = Map();
+					updateWR.put("Contact_Record",contact_id);
+					updateWR.put("Partner_Status","Active");
+					updateWR.put("Status","Rejected");
+					WRupdated = zoho.crm.updateRecord("Website_Request",id,updateWR,{"trigger":{"workflow"}});
+					info "WRupdated: " + WRupdated;
+				}
+				else
+				{
+					newLead = Map();
+					// Re Mapping for API
+					newLead.put("Affiliate",ifNull(wr_payload.getJSON("Affiliate"),""));
+					newLead.put("First_Name",ifNull(wr_payload.getJSON("First_Name"),""));
+					newLead.put("Last_Name",ifNull(wr_payload.getJSON("Last_Name"),""));
+					newLead.put("Email",ifNull(wr_payload.getJSON("Email"),""));
+					phonestar = wr_payload.getJSON("Phone");
+					if(phonestar == null)
+					{
+						phone = wr_payload.getJSON("Business_Phone");
+					}
+					else
+					{
+						phone = wr_payload.getJSON("Phone");
+					}
+					newLead.put("Phone",phone);
+					newLead.put("Residential_Transaction_Type",ifNull(wr_payload.getJSON("Residential_Transaction_Type"),""));
+					newLead.put("Property_Description",ifNull(wr_payload.getJSON("Property_Description"),""));
+					// 			newLead.put("Lead_State",ifNull(wr_payload.getJSON("Lead_State"),""));
+					newLead.put("Monthly_Gross_Income_2",ifNull(wr_payload.getJSON("What_is_your_monthly_gross_income"),""));
+					newLead.put("Credit_Score_1",ifNull(wr_payload.getJSON("Credit_Score").toString(),""));
+					newLead.put("Company",ifNull(wr_payload.getJSON("Company"),""));
+					newLead.put("Time_in_Business1",ifNull(wr_payload.getJSON("Time_in_Business_Years").toString(),""));
+					newLead.put("Loan_Amount_Requested",ifNull(wr_payload.getJSON("Loan_Amount_Requested"),""));
+					info wr_payload.getJSON("Loan_Amount_Requested");
+					////////////// ********************************************** ///////////////////////////////////
+					newLead.put("Date_Of_Birth",ifNull(wr_payload.getJSON("Date_Of_Birth.toString"),""));
+					newLead.put("Annual_Gross_Sales",ifNull(wr_payload.getJSON("Annual_Gross_Sales").toString(),""));
+					newLead.put("Federal_Tax_ID",ifNull(wr_payload.getJSON("Federal_Tax_ID"),""));
+					newLead.put("Mobile",ifNull(wr_payload.getJSON("Mobile"),""));
+					newLead.put("Subject_Property_Stat",ifNull(wr_payload.getJSON("Subject_Property_Stat"),""));
+					newLead.put("Best_Time_to_contact",ifNull(wr_payload.getJSON("Best_Time_to_contact"),""));
+					newLead.put("Requested_Product",ifNull(wr_payload.getJSON("Requested_Product"),""));
+					newLead.put("Working_Capital_Being_Requested_For",ifNull(wr_payload.getJSON("Working_Capital_Being_Requested_For"),""));
+					newLead.put("Legal_Entity",ifNull(wr_payload.getJSON("Legal_Entity"),""));
+					// 				newLead.put("Business_Phone",ifNull(wr_payload.getJSON("Business_Phone_Number"),""));
+					newLead.put("Business_Email_Address",ifNull(wr_payload.getJSON("Business_Email_Address"),""));
+					newLead.put("Industry",ifNull(wr_payload.getJSON("Industry"),""));
+					//	newLead.put("State_of_incorporation",ifNull(wr_payload.getJSON("State_of_incorporation"),""));
+					newLead.put("Physical_Address",ifNull(wr_payload.getJSON("Physical_Address"),""));
+					newLead.put("Physical_City",ifNull(wr_payload.getJSON("Physical_City"),""));
+					newLead.put("Physical_State",ifNull(wr_payload.getJSON("Physical_State"),""));
+					newLead.put("Physical_Zip_Code",ifNull(wr_payload.getJSON("Physical_Zip_Code"),""));
+					newLead.put("Doing_Business_As",ifNull(wr_payload.getJSON("Doing_Business_As"),""));
+					//newLead.put("Website",ifNull(wr_payload.getJSON("Website"),""));
+					newLead.put("Fax",ifNull(wr_payload.getJSON("Fax"),""));
+					if(wr_payload.getJSON("Business_Start_Date") != null)
+					{
+						newLead.put("Business_Star_Date",ifNull(wr_payload.getJSON("Business_Start_Date").toDate(),""));
+					}
+					newLead.put("Mailing_Address",ifNull(wr_payload.getJSON("Mailing_Address"),""));
+					newLead.put("Mailing_City",ifNull(wr_payload.getJSON("Mailing_City"),""));
+					newLead.put("Mailing_State",ifNull(wr_payload.getJSON("Mailing_State"),""));
+					newLead.put("Mailing_Zip_Code",ifNull(wr_payload.getJSON("Mailing_Zip_Code"),""));
+					newLead.put("Rent_or_Own_Business",ifNull(wr_payload.getJSON("Rent_or_Own_Business"),""));
+					newLead.put("Business_Property_Value",ifNull(wr_payload.getJSON("Business_Property_Value"),""));
+					newLead.put("Rent_Mortgage_Amount",ifNull(wr_payload.getJSON("Rent_Mortgage_Amount"),""));
+					// 			IF_REFI_Balance_Left_on_Mortgage =	wr_payload.getJSON("IF_REFI_Balance_Left_on_Mortgage");
+					newLead.put("Landlord_Mortgage_Company_Contact",ifNull(wr_payload.getJSON("Landlord_Mortgage_Company_Contact"),""));
+					newLead.put("Open_Bankruptcy",ifNull(wr_payload.getJSON("Open_Bankruptcy"),""));
+					newLead.put("Monthly_Gross_Sales",ifNull(wr_payload.getJSON("Monthly_Gross_Sales"),""));
+					newLead.put("First_Name",ifNull(wr_payload.getJSON("First_Name"),""));
+					newLead.put("Street",ifNull(wr_payload.getJSON("Street"),""));
+					newLead.put("City",ifNull(wr_payload.getJSON("City"),""));
+					newLead.put("Lead_State",ifNull(wr_payload.getJSON("Lead_State"),""));
+					newLead.put("Zip_Code",ifNull(wr_payload.getJSON("Zip_Code"),""));
+					///// Newly Mapped Fields ////
+					newLead.put("Co_Owner_State2",ifNull(wr_payload.getJSON("Co_Owner_State2"),""));
+					newLead.put("Co_Owner_Credit_Score",ifNull(wr_payload.getJSON("Co_Owner_Credit_Score"),""));
+					newLead.put("Co_Owner_Last_Name",ifNull(wr_payload.getJSON("Co_Owner_Last_Name"),""));
+					newLead.put("Co_Ownership_Percentage",ifNull(wr_payload.getJSON("Co_Ownership_Percentage"),""));
+					newLead.put("Co_Owner_City",ifNull(wr_payload.getJSON("Co_Owner_City"),""));
+					//newLead.put("Mobile",ifNull(wr_payload.getJSON("Mobile"),""));
+					newLead.put("Co_Owner_Street",ifNull(wr_payload.getJSON("Co_Owner_Street"),""));
+					newLead.put("Co_Owner_Zip_Code",ifNull(wr_payload.getJSON("Co_Owner_Zip_Code"),""));
+					newLead.put("Co_Owner_Email",ifNull(wr_payload.getJSON("Co_Owner_Email_Address"),""));
+					newLead.put("Co_Owner_First_Name",ifNull(wr_payload.getJSON("Co_Owner_First_Name"),""));
+					newLead.put("Co_Owner_Time_in_Business_Years",ifNull(wr_payload.getJSON("Co_Owner_Time_in_Business_Years"),""));
+					newLead.put("Are_you_a_veteran",ifNull(wr_payload.getJSON("Are_you_a_veteran"),""));
+					newLead.put("Do_you_Currently_Rent_or_Own",ifNull(wr_payload.getJSON("Do_you_Currently_Rent_or_Own"),""));
+					newLead.put("Any_outstanding_Business_Loan_Debt",ifNull(wr_payload.getJSON("Any_outstanding_Business_Loan_Debt"),""));
+					newLead.put("Do_you_have_any_Judgements_or_Liens",ifNull(wr_payload.getJSON("Do_you_have_any_Judgements_or_Liens"),""));
+					newLead.put("Have_you_ever_had_a_Bankruptcy_or_Foreclosure",ifNull(wr_payload.getJSON("Have_you_ever_had_a_Bankruptcy_or_Foreclosure"),""));
+					newLead.put("Co_Owner_Have_you_ever_had_a_Bankruptcy_or_Foreclo",ifNull(wr_payload.getJSON("Co_Owner_Have_you_ever_had_a_Bankruptcy_or_Foreclo"),""));
+					newLead.put("Co_Owner_Do_you_Currently_Rent_or_Own",ifNull(wr_payload.getJSON("Co_Owner_Do_you_Currently_Rent_or_Own"),""));
+					newLead.put("House_Status_Do_you_need_to_find_a_house_to_buy",ifNull(wr_payload.getJSON("When_do_you_plan_on_purchasing_the_property"),""));
+					newLead.put("IF_PURCHASE_Purchase_Price",ifNull(wr_payload.getJSON("Purchase_Price").toString(),""));
+					if(wr_payload.getJSON("Amount_you_have_to_put_down").isNull() == false)
+					{
+						newLead.put("Amount_you_have_to_put_down",ifNull(wr_payload.getJSON("Amount_you_have_to_put_down").toString(),""));
+					}
+					if(wr_payload.getJSON("IF_REFI_Balance_Left_on_Mortgage").isNull() == false)
+					{
+						// 							bal = wr_payload.getJSON("IF_REFI_Balance_Left_on_Mortgage").remove(",");
+						bal = wr_payload.getJSON("IF_REFI_Balance_Left_on_Mortgage").toString();
+						newLead.put("IF_REFI_Balance_Left_on_Mortgage",ifNull(bal,""));
+					}
+					newLead.put("Currently_in_an_interest_only_or_balloon_note",ifNull(wr_payload.getJSON("Currently_in_an_interest_only_or_balloon_note"),""));
+					newLead.put("Are_you_current_on_your_mortgage_payments",ifNull(wr_payload.getJSON("Are_you_current_on_your_mortgage_payments"),""));
+					newLead.put("Monthly_Taxes",ifNull(wr_payload.getJSON("Monthly_Taxes"),""));
+					newLead.put("Mortgage_Type",ifNull(wr_payload.getJSON("Mortgage_Type"),""));
+					newLead.put("Property_Use",ifNull(wr_payload.getJSON("Property_Use"),""));
+					newLead.put("House_Status_Do_you_need_to_find_a_house_to_buy",ifNull(wr_payload.getJSON("When_do_you_plan_on_purchasing_the_property"),""));
+					newLead.put("IF_REFI_Property_Value",ifNull(wr_payload.getJSON("IF_REFI_Property_Value"),""));
+					newLead.put("IF_REFI_Current_Rate",ifNull(wr_payload.getJSON("IF_REFI_Current_Rate"),""));
+					newLead.put("Monthly_Insurance",ifNull(wr_payload.getJSON("Monthly_Insurance"),""));
+					newLead.put("Comments",ifNull(wr_payload.getJSON("Comments"),""));
+					newLead.put("Property_Use",ifNull(wr_payload.getJSON("Property_Use"),""));
+					newLead.put("Co_Owner_Phone",ifNull(wr_payload.getJSON("Co_Owner_Mobile"),""));
+					newLead.put("Co_Owner_Social",ifNull(wr_payload.getJSON("Co_Owner_SSN"),""));
+					newLead.put("Phone_Type",ifNull(wr_payload.getJSON("Phone_Type"),""));
+					//newLead.put("Credit_Card_Monthly_Volume",ifNull(wr_payload.getJSON("Credit_Card_Monthly_Volume"),""));
+					newLead.put("Owner_SSN",ifNull(wr_payload.getJSON("Owner_SSN"),""));
+					newLead.put("Property_Home_Value",ifNull(wr_payload.getJSON("Property_Home_Value"),""));
+					if(wr_payload.getJSON("Co_Owner_Date_Of_Birth") != null)
+					{
+						newLead.put("Co_Owner_Date_Of_Birth",ifNull(wr_payload.getJSON("Co_Owner_Date_Of_Birth").toDate(),""));
+					}
+					newLead.put("MCA_or_loan_accounts",ifNull(wr_payload.getJSON("MCA_or_loan_accounts"),""));
+					newLead.put("Balance_left_on_Home_Mortgage",ifNull(wr_payload.getJSON("Balance_left_on_Home_Mortgage"),""));
+					// 				newLead.put("Lead_Source",ifNull(wr_payload.getJSON("Source_Type"),""));
+					newLead.put("Ownership",ifNull(wr_payload.getJSON("Ownership"),""));
+					newLead.put("Property_Business_Value",ifNull(wr_payload.getJSON("Business_Property_Value"),""));
+					newLead.put("Monthly_Gross_Sales1",ifNull(wr_payload.getJSON("Monthly_Gross_Sales"),""));
+					newLead.put("Residential_Transaction_Type",ifNull(wr_payload.getJSON("Residential_Transaction_Type"),""));
+					newLead.put("Are_you_operating_a_Business_at_this_property",ifNull(wr_payload.getJSON("Are_you_operating_a_Business_at_this_property"),""));
+					newLead.put("IF_PURCHASE_Purchase_Price",ifNull(wr_payload.getJSON("Purchase_Price").toString(),""));
+					newLead.put("Annual_Gross_Sales",ifNull(wr_payload.getJSON("Annual_Gross_Sales").toString(),""));
+					newLead.put("Lead_TIB",ifNull(wr_payload.getJSON("Lead_TIB"),wr_payload.getJSON("Time_in_Business1")));
+					//
+					if(Layout == "Mortgage" || Mortgage_Property_Description.isNull() == false)
+					{
+						newLead.put("Layout","5083203000000742009");
+					}
+					else
+					{
+						newLead.put("Layout","5083203000000603001");
+					}
+					newLead.put("Lead_Status","New");
+					if(wr_payload.getJSON("Lead_Source") == "Popcrumbs")
+					{
+						newLead.put("Lead_Source","Popcrumbs");
+					}
+					else if(Affiliate == "finance@clvisual.com" || Affiliatepid == "T-23552223-P")
+					{
+						newLead.put("Lead_Source","CLV Go");
+					}
+					else
+					{
+						newLead.put("Lead_Source","Affiliate");
+					}
+					affiliate_id = search_affiliate.get(0).getJSON("id");
+					if(search_affiliate.get(0).getJSON("Affiliates_Manager").isNull() == false)
+					{
+						affiliate_manager_id = search_affiliate.get(0).getJSON("Affiliates_Manager").getJSON("id");
+						newLead.put("Affiliates_Manager",affiliate_manager_id.toNumber());
+						if(search_affiliate.get(0).getJSON("New_Affiliate_Partner_ID").isNull() == false)
+						{
+							newLead.put("New_Affiliate_Partner_ID",search_affiliate.get(0).getJSON("New_Affiliate_Partner_ID"));
+						}
+					}
+					if(search_affiliate.get(0).getJSON("Main_Manager").isNull() == false)
+					{
+						new_Main_Manager = search_affiliate.get(0).getJSON("Main_Manager").getJSON("id");
+						newLead.put("Main_Manager",new_Main_Manager.toNumber());
+						newLead.put("New_Manager_Partner_ID",ifnull(search_affiliate.get(0).getJSON("New_Main_Manager_Partner_ID"),""));
+					}
+					newLead.put("Affiliate",affiliate_id);
+					newLead.put("Partner_ID",search_affiliate.get(0).getJSON("Partner_ID"));
+					newLead.put("Lead_Creator_ID",wr.get("Creator_ID"));
+					newLead.put("Preferred_Language",ifnull(wr_payload.getJSON("Preferred_Language"),""));
+					newLead.put("Date_Posted_1",ifnull(wr_payload.getJSON("Date_Posted_1"),""));
+					newLead.put("ULID",ifnull(wr_payload.getJSON("ULID"),""));
+					//	newLead.put("Credit_Card_Monthly_Volume",ifnull(wr_payload.getJSON("Credit_Card_Monthly_Volume"),""));
+					newLead.put("Num_of_Employees",ifnull(wr_payload.getJSON("Num_of_Employees"),""));
+					info "newLead: " + newLead;
+					data_list = List();
+					data_map = Map();
+					if(search_affiliate.getJSON("Owner").getJSON("name") == "Leeat Shalom" || search_affiliate.getJSON("Owner").getJSON("name") == "Chris Bolos" || search_affiliate.getJSON("Owner").getJSON("name") == "Jesse Guido" || search_affiliate.getJSON("Owner").getJSON("name") == "Paul Bisono" || search_affiliate.getJSON("Owner").getJSON("name") == "Heather Jankowski" || search_affiliate.getJSON("Owner").getJSON("name") == "Mark Hanna" || search_affiliate.getJSON("Owner").getJSON("name") == "TAG Developer")
+					{
+						if(Affiliate == "finance@clvisual.com" || Affiliatepid == "T-23552223-P")
+						{
+							newLead.put("Owner","5083203000002320001");
+						}
+						data_list.add(newLead);
+						data_map.put("data",data_list);
+						triglist = List();
+						triglist.add("workflow");
+						data_map.put("lar_id","5083203000044022017");
+						data_map.put("trigger",triglist);
+					}
+					else
+					{
+						if(Affiliate == "finance@clvisual.com" || Affiliatepid == "T-23552223-P")
+						{
+							newLead.put("Owner","5083203000002320001");
+						}
+						else
+						{
+							newLead.put("Owner",search_affiliate.getJSON("Owner").getJSON("id"));
+						}
+						data_list.add(newLead);
+						triglist = List();
+						triglist.add("workflow");
+						data_map.put("data",data_list);
+						data_map.put("trigger",triglist);
+					}
+					info data_map;
+					leadCreated = invokeurl
+					[
+						url :"https://www.zohoapis.com/crm/v4/Leads"
+						type :POST
+						parameters:data_map + ""
+						connection:"zoho_crm"
+					];
+					info "leadCreated: " + leadCreated;
+					status = leadCreated.getJSON("data").getJSON("details").getJSON("status");
+					lead_id = leadCreated.getJSON("data").getJSON("details").getJSON("id");
+					info "lead created lead_id: " + lead_id;
+					info "sa_CreateLeadOnCreator";
+					// 					info standalone.sa_CreateLeadOnCreator(lead_id,"Accepted","lead",id);
+					updateWR = Map();
+					updateWR.put("Lead_record",lead_id);
+					if(lead_id.isEmpty() == false)
+					{
+						updateWR.put("Status","Accepted");
+					}
+					else
+					{
+						updateWR.put("Status","Rejected");
+					}
+					updateWR.put("Email",wr_payload.getJSON("Email"));
+					updateWR.put("Partner_Status","Active");
+					WRupdated = zoho.crm.updateRecord("Website_Request",id,updateWR,{"trigger":{"workflow"}});
+					info "WRupdated: " + WRupdated;
+				}
+			}
+		}
+		else
+		{
+			info "Affilitate is empty!";
+			WRupdated = zoho.crm.updateRecord("Website_Request",id,{"Partner_Status":"Inactive"});
+			info "WRupdated: " + WRupdated;
+		}
+	}
+}
+else
+{
+	info "Payload is empty!";
+}
+// New Lead Module record creation function
+var = standalone.api_process_new(id);
