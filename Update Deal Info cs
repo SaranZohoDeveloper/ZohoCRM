@@ -1,0 +1,198 @@
+var acc_detail = ZDK.Page.getField('Account_Name');
+var aff = ZDK.Page.getField('Affiliate');
+console.log(aff);
+let acc = acc_detail.getValue();
+let acc_id = acc.id;
+var accounts_det = ZDK.Apps.CRM.Accounts.fetchById(acc_id);
+console.log(accounts_det);
+var acc_key = [];
+const date = [];
+if (acc_id !== undefined && acc_id !== null) {
+  var accounts = ZDK.Apps.CRM.Accounts.fetchRelatedRecords(acc_id, "Deals");
+  for (var i = 0; i < accounts.length; i++) {
+    let acc_funded_date = accounts[i]._Funded_Date;
+    const date1 = new Date(acc_funded_date);
+    date[i] = date1;
+    date.sort(function (a, b) {
+      return a - b;
+    });
+  }
+  const date_length = date.length;
+  const get_recent_date = date_length - 1;
+  console.log(get_recent_date);
+  // ZDK.Client.showAlert('recent_date,'+get_recent_date);
+
+  //let acc_deal_name = accounts[get_recent_date]._Deal_Name;
+  let deal_id = accounts[get_recent_date]._id;
+
+  var deals_details = ZDK.Apps.CRM.Deals.fetchById(deal_id);
+    //ZDK.Client.showConfirmation('deals,'+ deals_details);
+    ZDK.Page.getField('Deal_Name').setValue(deals_details._Deal_Name);
+    ZDK.Page.getField('Amount').setValue(0);
+    ZDK.Page.getField('Requested_Product').setValue(deals_details._Requested_Product);
+    ZDK.Page.getField('Pipeline').setValue(deals_details._Pipeline);
+    ZDK.Page.getField('Stage').setValue(deals_details._Stage);
+    ZDK.Page.getField('MID').setValue(deals_details._MID);
+    ZDK.Page.getField('Lead_Source').setValue(deals_details._Lead_Source);
+    // console.log(deals_details.__Campaign_Source_Lookup_Id);
+    // if (deals_details.__Campaign_Source_Lookup_Id == "undefined")
+    // {
+    // }
+    ZDK.Page.getField('Type').setValue(deals_details._Type);
+    ZDK.Page.getField('Currency').setValue(deals_details._Currency);
+    ZDK.Page.getField('Legacy_MID').setValue(deals_details._Legacy_MID);
+    if (deals_details._Next_Step !== null) {
+      ZDK.Page.getField('Next_Step').setValue(deals_details._Next_Step);
+    }
+    ZDK.Page.getField('Loan_Amount_Requested').setValue(deals_details._Loan_Amount_Requested);
+    console.log("Loan Amount", deals_details._Loan_Amount_Requested);
+    ZDK.Page.getField('Addl_Notes').setValue(deals_details._Addl_Notes);
+    if (deals_details._Fax !== null) {
+      ZDK.Page.getField('Fax').setValue(deals_details._Fax);
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Business informations
+    ZDK.Page.getField('Doing_Business_As').setValue(deals_details._Doing_Business_As);
+    ZDK.Page.getField('Legal_Entity').setValue(deals_details._Legal_Entity);
+    ZDK.Page.getField('Federal_Tax_ID').setValue(deals_details._Federal_Tax_ID);
+    ZDK.Page.getField('Phone').setValue(deals_details._Phone);
+    ZDK.Page.getField('Business_Phone_Number').setValue(deals_details._Business_Phone_Number);
+    ZDK.Page.getField('Business_Website').setValue(deals_details._Business_Website);
+    ZDK.Page.getField('Business_Email_Address').setValue(deals_details._Business_Email_Address);
+    ZDK.Page.getField('Physical_Address').setValue(deals_details._Physical_Address);
+    ZDK.Page.getField('Physical_City').setValue(deals_details._Physical_City);
+    ZDK.Page.getField('Physical_State1').setValue(deals_details._Physical_State1);
+    ZDK.Page.getField('Physical_Zip').setValue(deals_details._Physical_Zip);
+    ZDK.Page.getField('MCA_or_loan_accounts1').setValue(deals_details._MCA_or_loan_accounts1);
+    ZDK.Page.getField('Open_Bankruptcy').setValue(deals_details._Open_Bankruptcy);
+    ZDK.Page.getField('Working_Capital_Being_Requested_For').setValue(deals_details._Working_Capital_Being_Requested_For);
+    ZDK.Page.getField('Gross_Annual_Sales').setValue(deals_details._Gross_Annual_Sales);
+    ZDK.Page.getField('Business_Start_Date').setValue(deals_details._Business_Start_Date);
+    ZDK.Page.getField('State_of_Incorporation').setValue(deals_details._State_of_Incorporation);
+    ZDK.Page.getField('Rent_or_Own_Business').setValue(deals_details._Rent_or_Own_Business);
+    ZDK.Page.getField('Balance_left_on_Home_Mortgage').setValue(deals_details._Balance_left_on_Home_Mortgage);
+    ZDK.Page.getField('Property_Home_Value').setValue(deals_details._Property_Home_Value);
+    ZDK.Page.getField('Monthly_Gross_Sales1').setValue(deals_details._Monthly_Gross_Sales1);
+    ZDK.Page.getField('Rent_or_Own_Business').setValue(deals_details._Rent_or_Own_Business);
+    ZDK.Page.getField('Landlord_Mortgage_Company_Contact').setValue(deals_details._Landlord_Mortgage_Company_Contact);
+    ZDK.Page.getField('Business_Property_Value').setValue(deals_details._Business_Property_Value);
+    ZDK.Page.getField('Balance_left_on_Home_Mortgage').setValue(deals_details._Balance_left_on_Home_Mortgage);
+    ZDK.Page.getField('Balance_left_on_Business_Mortgage').setValue(deals_details._Balance_left_on_Business_Mortgage);
+    ZDK.Page.getField('Rent_Mortgage_Amount').setValue(deals_details._Rent_Mortgage_Amount);
+    ZDK.Page.getField('Current_Credit_Card_Processor').setValue(deals_details._Current_Credit_Card_Processor);
+    ZDK.Page.getField('Credit_Card_Monthly_Volume').setValue(deals_details._Credit_Card_Monthly_Volume);
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Business Ownership
+    ZDK.Page.getField('Minimum_Ownership').setValue(deals_details._Minimum_Ownership);
+    ZDK.Page.getField('Owner_Address').setValue(deals_details._Owner_Address);
+    ZDK.Page.getField('Owner_City').setValue(deals_details._Owner_City);
+    ZDK.Page.getField('Owner_State1').setValue(deals_details._Owner_State1);
+    ZDK.Page.getField('Owner_Zip').setValue(deals_details._Owner_Zip);
+    ZDK.Page.getField('Owner_Email').setValue(deals_details._Owner_Email);
+    ZDK.Page.getField('Owner_Mobile').setValue(deals_details._Owner_Mobile);
+    ZDK.Page.getField('Owner_SSN').setValue(deals_details._Owner_SSN);
+    ZDK.Page.getField('Owner_Date_of_Birth').setValue(deals_details._Owner_Date_of_Birth);
+    ZDK.Page.getField('Credit_Score_FICO').setValue(deals_details._Credit_Score_FICO);
+    ZDK.Page.getField('Co_Owner_Credit_Score_FICO1').setValue(deals_details._Co_Owner_Credit_Score_FICO1);
+    ZDK.Page.getField('Rent_or_Own_Home').setValue(deals_details._Rent_or_Own_Home);
+    ZDK.Page.getField('Co_Owner_Name').setValue(deals_details._Co_Owner_Name);
+    ZDK.Page.getField('Co_Owner_Last_Name').setValue(deals_details._Co_Owner_Last_Name);
+    ZDK.Page.getField('Co_Ownership_Percentage').setValue(deals_details._Co_Ownership_Percentage);
+    ZDK.Page.getField('Co_Owner_Address').setValue(deals_details._Co_Owner_Address);
+    ZDK.Page.getField('Co_Owner_City').setValue(deals_details._Co_Owner_City);
+    ZDK.Page.getField('Co_Owner_State1').setValue(deals_details._Co_Owner_State1);
+    ZDK.Page.getField('Co_Owner_Zip').setValue(deals_details._Co_Owner_Zip);
+    ZDK.Page.getField('Co_Owner_Email_Address').setValue(deals_details._Co_Owner_Email_Address);
+    ZDK.Page.getField('Co_Owner_Mobile_2').setValue(deals_details._Co_Owner_Mobile_2);
+    ZDK.Page.getField('Co_Owner_SSN').setValue(deals_details._Co_Owner_SSN);
+    ZDK.Page.getField('Co_Owner_Date_of_Birth').setValue(deals_details._Co_Owner_Date_of_Birth);
+    // ZDK.Page.getField('Co_Owner_Credit_Score_Fico').setValue(deals_details._Co_Owner_Credit_Score_Fico);
+    // sf details
+    // bank check list
+    let bank_check_list = deals_details._Bank_Check_List;
+    var subformRow_list = [];
+    for (var j = 0; j < bank_check_list.length; j++) {
+      var sub_len = bank_check_list.length;
+      if (sub_len > 0) {
+        var account_num = bank_check_list[j].Account_Number;
+        var created_By = bank_check_list[j].Created_By;
+        var currency_Deposit = bank_check_list[j].Currency_Deposit;
+        var avg_Daily_Balance = bank_check_list[j].Avg_Daily_Balance;
+        var month = bank_check_list[j].Month;
+        var montlhy_Deposit = bank_check_list[j].Montlhy_Deposit;
+        var number_of_Neg_Balance = bank_check_list[j].Number_of_Neg_Balance;
+        var nSF = bank_check_list[j].NSF;
+        var number_Of_Deposits = bank_check_list[j].Number_Of_Deposits;
+        var include_in_Average = bank_check_list[j].Include_in_Average;
+        var year = bank_check_list[j].Year;
+        var subformRow_data = {};
+        subformRow_data["Account_Number"] = account_num;
+        subformRow_data["Created_By"] = created_By;
+        subformRow_data["Currency_Deposit"] = currency_Deposit;
+        subformRow_data["Avg_Daily_Balance"] = avg_Daily_Balance;
+        subformRow_data["Month"] = month;
+        subformRow_data["Montlhy_Deposit"] = montlhy_Deposit;
+        subformRow_data["Number_of_Neg_Balance"] = number_of_Neg_Balance;
+        subformRow_data["NSF"] = nSF;
+        subformRow_data["Number_Of_Deposits"] = number_Of_Deposits;
+        subformRow_data["Include_in_Average"] = include_in_Average;
+        subformRow_data["Year"] = year;
+        subformRow_list[j] = subformRow_data;
+      }
+    }
+    ZDK.Page.getField("Bank_Check_List").setValue(subformRow_list);
+    ////
+    //Checklist Cheat Sheet/////////////////////////////////////////////////////////////////////////////////////////////////////
+    ZDK.Page.getField('Industry').setValue(deals_details._Industry);
+    ZDK.Page.getField('Advance_Position').setValue(deals_details._Advance_Position);
+    ZDK.Page.getField('Minimum_TIB').setValue(deals_details._Minimum_TIB);
+    ZDK.Page.getField('Checklist_Notes').setValue(deals_details._Checklist_Notes);
+    ZDK.Page.getField('Minimum_number_of_deposits_Monthly').setValue(deals_details._Minimum_number_of_deposits_Monthly);
+    ZDK.Page.getField('ADB_Average_Daily_Balance').setValue(deals_details._ADB_Average_Daily_Balance);
+    ZDK.Page.getField('Minimum_Deposits_Monthly').setValue(deals_details._Minimum_Deposits_Monthly);
+    ZDK.Page.getField('Average_Negative_Days').setValue(deals_details._Average_Negative_Days);
+    ZDK.Page.getField('Max_NSF_Negative_Balance').setValue(deals_details._Max_NSF_Negative_Balance);
+  if (deal_id != null || deal_id != "")
+  {
+    var deals_info = ZDK.Apps.CRM.Deals.fetchById(deal_id);
+    //ZDK.Client.showAlert('deals info ,'+ deals_info);
+      var contact_info = ZDK.Apps.CRM.Contacts.fetchById(deals_info._Contact_Name_Lookup_Id);
+    console.log(contact_info);
+      ZDK.Page.getField('Contact_Name').setValue({ "id": deals_info._Contact_Name_Lookup_Id, "name": contact_info._Full_Name });
+    if (deals_info._Affiliate_Lookup_Id != null || deals_info._Affiliate_Lookup_Id != "")
+    {
+        var aff_info = ZDK.Apps.CRM.Affiliates.fetchById(deals_info._Affiliate_Lookup_Id);
+      ZDK.Page.getField('Affiliate').setValue({ "id": deals_info._Affiliate_Lookup_Id, "name": aff_info._Name });
+      var aff_manager_info = ZDK.Apps.CRM.Affiliates.fetchById(contact_info._New_Affiliates_Manager_Lookup_Id);
+      ZDK.Page.getField('New_Affiliates_Manager').setValue({ "id": contact_info._New_Affiliates_Manager_Lookup_Id, "name": aff_manager_info._Name });
+      var main_manager_info = ZDK.Apps.CRM.Affiliates.fetchById(contact_info._New_Main_Manager_Lookup_Id);
+      ZDK.Page.getField('New_Main_Manager').setValue({ "id": deals_info._New_Main_Manager_Lookup_Id, "name": main_manager_info._Name });
+           
+
+     }
+      // ZDK.Page.getField('Business_Property_Value').setValue(1000);
+    //   if (deals_info._Affiliate_Manager_Lookup_Id != null) {
+    //     var aff_mang_info = ZDK.Apps.CRM.Affiliate_Managers.fetchById(deals_info._Affiliate_Manager_Lookup_Id);
+    //     //ZDK.Client.showAlert(aff_mang_info._Name);
+    //     ZDK.Page.getField('Affiliate_Manager').setValue({ "id": deals_info._Affiliate_Manager_Lookup_Id, "name": aff_mang_info._Name });
+    //   }
+      if (deals_info._New_Affiliates_Manager_Lookup_Id != null)
+      {
+        var aff_manager_info = ZDK.Apps.CRM.Affiliates.fetchById(contact_info._New_Affiliates_Manager_Lookup_Id);
+       // ZDK.Client.showAlert('managing partner,'+ aff_manager_info);
+        ZDK.Page.getField('New_Affiliates_Manager').setValue({ "id": deals_info._New_Affiliates_Manager_Lookup_Id, "name": aff_manager_info._Name });
+
+      }
+      if (deals_info._New_Main_Manager != null)
+      {
+        var main_manager_info = ZDK.Apps.CRM.Affiliates.fetchById(contact_info._New_Main_Manager_Lookup_Id);
+        ZDK.Page.getField('New_Main_Manager').setValue({ "id": deals_info.__New_Main_Manager_Lookup_Id, "name": main_manager_info._Name });
+
+      }
+
+    }
+    var cam_source_info = ZDK.Apps.CRM.Campaigns.fetchById(deals_details._Campaign_Source_Lookup_Id);
+    console.log(cam_source_info);
+  ZDK.Page.getField('Campaign_Source').setValue({ "id": deals_details._Campaign_Source_Lookup_Id, "name": cam_source_info._Campaign_Name });
+
+}
