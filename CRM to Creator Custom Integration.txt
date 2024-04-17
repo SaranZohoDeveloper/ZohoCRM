@@ -1,0 +1,512 @@
+get_deal_info = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v6/Deals/" + deal_id
+	type :GET
+	connection: "XXXXXXXXX"
+];
+if(get_deal_info.size() > 0 && get_deal_info.getJSON("data").size() > 0)
+{
+		Requested_Product = get_deal_info.getJSON("data").getJSON("Requested_Product");
+		Minimum_TIB = get_deal_info.getJSON("data").getJSON("Minimum_TIB");
+		get_year = 0;
+		if(Minimum_TIB != "" && Minimum_TIB != null)
+		{
+			if(Minimum_TIB.contains("Months") == true)
+			{
+				get_val = Minimum_TIB.getprefix("Months").trim().toNumber();
+				get_year = get_val / 12;
+			}
+		}
+		Industry = get_deal_info.getJSON("data").getJSON("Industry");
+		Credit_Score_FICO = ifnull(get_deal_info.getJSON("data").getJSON("Credit_Score_FICO"),"0").toNumber();
+		Max_NSF_Negative_Balance = ifnull(get_deal_info.getJSON("data").getJSON("Max_NSF_Negative_Balance"),"0").toNumber();
+		ADB_Average_Daily_Balance = get_deal_info.getJSON("data").getJSON("ADB_Average_Daily_Balance");
+		Minimum_Ownership = get_deal_info.getJSON("data").getJSON("Minimum_Ownership");
+		Minimum_Deposits_Monthly = get_deal_info.getJSON("data").getJSON("Minimum_Deposits_Monthly");
+		Minimum_number_of_deposits_Monthly = get_deal_info.getJSON("data").getJSON("Minimum_number_of_deposits_Monthly");
+		Physical_State1 = get_deal_info.getJSON("data").getJSON("Physical_State1");
+		Advance_Position = ifnull(get_deal_info.getJSON("data").getJSON("Advance_Position"),"0").subString(0,1).toNumber();
+		// 	info Advance_Position  ;
+		// 	get active lenders from creator.....
+		get_creator_lenders = zoho.creator.getRecords("theaccreditedgroup","submission-tool","All_Lenders","Status == \"Active\"",1,200,"XXXXXXX"); 
+		if(get_creator_lenders.getJSON("code") == 3000 && get_creator_lenders.getJSON("data").size() > 0)
+		{
+			col = Collection();
+			for each  details in get_creator_lenders.getJSON("data")
+			{
+				crm_id = details.getJSON("CRM_ID");
+				lender_creator_id = details.getJSON("ID");
+				// 			get crm lenders.......
+				get_lender_info = invokeurl
+				[
+					url :"https://www.zohoapis.com/crm/v6/Lenders/" + crm_id
+					type :GET
+					connection:"XXXXXXX"   
+				];
+				if(get_lender_info.size() > 0 && get_lender_info.getJSON("data").size() > 0)
+				{
+					Products_Provided1 = get_lender_info.getJSON("data").getJSON("Products_Provided");
+					Minimum_TIB1 = ifnull(get_lender_info.getJSON("data").getJSON("Minimum_TIB"),"");
+					get_year1 = 0;
+					if(Minimum_TIB1 != "")
+					{
+						if(Minimum_TIB1.contains("months") == true)
+						{
+							get_val1 = Minimum_TIB1.getprefix("month").trim().toNumber();
+							get_year1 = get_val1 / 12;
+						}
+						else if(Minimum_TIB1.contains("month") == true)
+						{
+							get_val1 = Minimum_TIB1.getprefix("month").trim().toNumber();
+							get_year1 = get_val1 / 12;
+						}
+						else if(Minimum_TIB1.contains("years") == true)
+						{
+							get_val1 = Minimum_TIB1.getprefix("years").trim().toNumber();
+							get_year1 = get_val1 / 12;
+						}
+					}
+					Industry_Restrictions1 = get_lender_info.getJSON("data").getJSON("Industry_Restrictions");
+					Minimum_Credit1 = get_lender_info.getJSON("data").getJSON("Minimum_Credit");
+					Max_NSF_Negative_Balance1 = ifnull(get_lender_info.getJSON("data").getJSON("Max_NSF_Negative_Balance"),"0").toNumber();
+					// 					info Max_NSF_Negative_Balance1;
+					Minimum_ADB_Average_Daily_Balance1 = get_lender_info.getJSON("data").getJSON("Minimum_ADB_Average_Daily_Balance");
+					Minimum_Ownership1 = get_lender_info.getJSON("data").getJSON("Minimum_Ownership");
+					Minimum_Deposits_Monthly1 = get_lender_info.getJSON("data").getJSON("Minimum_Deposits_Monthly");
+					State_Restrictions1 = get_lender_info.getJSON("data").getJSON("State_Restrictions");
+					Max_Position_Funded1 = get_lender_info.getJSON("data").getJSON("Max_Position_Funded");
+					if(Requested_Product != Products_Provided1)
+					{
+						new_Products = true;
+					}
+					else
+					{
+						new_Products = false;
+					}
+					if(get_year <= get_year1)
+					{
+						new_Min_TIB = true;
+					}
+					else
+					{
+						new_Min_TIB = false;
+					}
+					if(Industry != Industry_Restrictions1)
+					{
+						new_Industry_Restrictions = true;
+					}
+					else
+					{
+						new_Industry_Restrictions = false;
+					}
+					if(Credit_Score_FICO <= Minimum_Credit1)
+					{
+						new_Min_Credit = true;
+					}
+					if(Max_NSF_Negative_Balance >= Max_NSF_Negative_Balance1)
+					{
+						new_Max_NSF_Negative_Balance = true;
+					}
+					else
+					{
+						new_Max_NSF_Negative_Balance = false;
+					}
+					if(ADB_Average_Daily_Balance <= Minimum_ADB_Average_Daily_Balance1)
+					{
+						new_Min_ADB_Average_Daily_Balance = true;
+					}
+					else
+					{
+						new_Min_ADB_Average_Daily_Balance = false;
+					}
+					if(Minimum_Ownership <= Minimum_Ownership1)
+					{
+						new_Min_Ownership = true;
+					}
+					else
+					{
+						new_Min_Ownership = false;
+					}
+					if(Minimum_Deposits_Monthly <= Minimum_Deposits_Monthly1)
+					{
+						new_Min_Deposits_Monthly = true;
+					}
+					else
+					{
+						new_Min_Deposits_Monthly = false;
+					}
+					if(Minimum_number_of_deposits_Monthly <= Minimum_Deposits_Monthly1)
+					{
+						new_Minimum_of_deposits_Monthly = true;
+					}
+					else
+					{
+						new_Minimum_of_deposits_Monthly = false;
+					}
+					if(Physical_State1 != State_Restrictions1)
+					{
+						new_State_Restrictions = true;
+					}
+					else
+					{
+						new_State_Restrictions = false;
+					}
+					if(get_lender_info.getJSON("data").getJSON("Minimum_Position_Funded").isNull() == false && get_lender_info.getJSON("data").getJSON("Minimum_Position_Funded") != "" && get_lender_info.getJSON("data").getJSON("Minimum_Position_Funded") != null)
+					{
+						Min_Position_Funded1 = get_lender_info.getJSON("data").getJSON("Minimum_Position_Funded").toNumber();
+					}
+					else
+					{
+						Min_Position_Funded1 = 0;
+					}
+					// 				info Min_Position_Funded1 ;
+					if(Advance_Position >= Min_Position_Funded1)
+					{
+						new_Min_Position_Funded = true;
+					}
+					else
+					{
+						new_Min_Position_Funded = false;
+					}
+					if(Advance_Position <= Max_Position_Funded1)
+					{
+						new_Max_Position_Funded = true;
+					}
+					else
+					{
+						new_Max_Position_Funded = false;
+					}
+					sub_form = Map();
+					sub_form.put("Lender_Name",lender_creator_id);
+					sub_form.put("Deal_Name",deal_id);
+					sub_form.put("Products",new_Products);
+					sub_form.put("Min_TIB",new_Min_TIB);
+					sub_form.put("Industry_Restrictions",new_Industry_Restrictions);
+					sub_form.put("Min_Credit",new_Min_Credit);
+					sub_form.put("Max_NSF_Negative_Balance",new_Max_NSF_Negative_Balance);
+					sub_form.put("Min_ADB_Average_Daily_Balance",new_Min_ADB_Average_Daily_Balance);
+					sub_form.put("Min_Ownership",new_Min_Ownership);
+					sub_form.put("Min_Deposits_Monthly",new_Min_Deposits_Monthly);
+					sub_form.put("Minimum_of_deposits_Monthly",new_Minimum_of_deposits_Monthly);
+					sub_form.put("State_Restrictions",new_State_Restrictions);
+					sub_form.put("Min_Position_Funded",new_Min_Position_Funded);
+					sub_form.put("Max_Position_Funded",new_Max_Position_Funded);
+					// 					Construction Guidelines
+					if(Industry.containsIgnoreCase("Construction") == true)
+					{
+						lst = List();
+						if(get_lender_info.getJSON("data").getJSON("Construction_TIB") != "")
+						{
+							if(get_lender_info.getJSON("data").getJSON("Construction_TIB").contains("Months") == true)
+							{
+								get_new = get_lender_info.getJSON("data").getJSON("Construction_TIB").getprefix("Months").trim().toNumber();
+								if(get_year >= get_new)
+								{
+									lst.add(1);
+									sub_form.put("Construction_TIB",true);
+								}
+							}
+						}
+						else if(get_lender_info.getJSON("data").getJSON("Construction_TIB") == "")
+						{
+							lst.add(1);
+							sub_form.put("Construction_TIB",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(Credit_Score_FICO <= ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Credit"),0).toNumber())
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Credit",true);
+						}
+						else if(ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Credit"),"") == "")
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Credit",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Monthly_Deposits"),"") != "")
+						{
+							//alert get_lender_info.getJSON("data").getJSON("Construction_Min_Monthly_Deposits");
+							if(Minimum_Deposits_Monthly <= ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Monthly_Deposits").replaceAll("[@#$%,]",""),0).toNumber())
+							{
+								lst.add(1);
+								sub_form.put("Construction_Min_Monthly_Deposits",true);
+							}
+						}
+						else if(ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Monthly_Deposits"),"") == "")
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Monthly_Deposits",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(Advance_Position >= ifnull(get_lender_info.getJSON("data").getJSON("Minimum_Position_Funded"),0).toNumber())
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Position",true);
+						}
+						else if(ifnull(get_lender_info.getJSON("data").getJSON("Minimum_Position_Funded"),"") == "")
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Position",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						new_lst = lst.distinct();
+						if(new_lst.contains(0) == false && new_lst.contains(1) == true)
+						{
+							sub_form.put("Construction_Guidelines",true);
+						}
+						else
+						{
+							sub_form.put("Construction_Guidelines",false);
+						}
+					}
+					// 					Trucking Guidelines
+					if(Industry.containsIgnoreCase("Trucking") == true)
+					{
+						lst = List();
+						if(get_lender_info.getJSON("data").getJSON("Trucking_TIB") != "")
+						{
+							if(get_lender_info.getJSON("data").getJSON("Trucking_TIB").contains("Months") == true)
+							{
+								get_new = get_lender_info.getJSON("data").getJSON("Trucking_TIB").getprefix("Months").trim().toNumber();
+								if(get_year >= get_new)
+								{
+									lst.add(1);
+									sub_form.put("Trucking_TIB",true);
+								}
+							}
+						}
+						else if(get_lender_info.getJSON("data").getJSON("Trucking_TIB") == "")
+						{
+							lst.add(1);
+							sub_form.put("Trucking_TIB",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(Credit_Score_FICO <= ifnull(get_lender_info.getJSON("data").getJSON("Trucking_Min_Credit"),0).toNumber())
+						{
+							lst.add(1);
+							sub_form.put("Trucking_Min_Credit",true);
+						}
+						else if(ifnull(get_lender_info.getJSON("data").getJSON("Trucking_Min_Credit"),"") == "")
+						{
+							lst.add(1);
+							sub_form.put("Trucking_Min_Credit",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(get_lender_info.getJSON("data").getJSON("Trucking_Min_Monthly_Deposits").isEmpty() == true)
+						{
+							lender_Trucking_Min_Monthly_Deposits = get_lender_info.getJSON("data").getJSON("Trucking_Min_Monthly_Deposits");
+						}
+						else
+						{
+							lender_Trucking_Min_Monthly_Deposits = 0;
+						}
+						if(Minimum_Deposits_Monthly >= lender_Trucking_Min_Monthly_Deposits)
+						{
+							lst.add(1);
+							sub_form.put("Trucking_Min_Monthly_Deposits",true);
+						}
+						else if(lender_Trucking_Min_Monthly_Deposits == 0)
+						{
+							lst.add(1);
+							sub_form.put("Trucking_Min_Monthly_Deposits",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(ifnull(get_lender_info.getJSON("data").getJSON("Trucking_Min_Position"),"") != "")
+						{
+							// 							info get_lender_info.getJSON("data").getJSON("Trucking_Min_Position") ;
+							if(get_lender_info.getJSON("data").getJSON("Trucking_Min_Position").contains("Months") == true)
+							{
+								get_new = get_lender_info.getJSON("data").getJSON("Trucking_Min_Position").getprefix("Months").trim().toNumber();
+								if(Advance_Position >= ifnull(get_lender_info.getJSON("data").getJSON("Trucking_Min_Position"),0).toNumber())
+								{
+									lst.add(1);
+									sub_form.put("Trucking_Min_Position",true);
+								}
+							}
+						}
+						else if(ifnull(get_lender_info.getJSON("data").getJSON("Trucking_Min_Position"),"") == "")
+						{
+							lst.add(1);
+							sub_form.put("Trucking_Min_Position",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						new_lst = lst.distinct();
+						if(new_lst.contains(0) == false && new_lst.contains(1) == true)
+						{
+							sub_form.put("Trucking_Guidelines",true);
+						}
+						else
+						{
+							sub_form.put("Trucking_Guidelines",true);
+						}
+					}
+					// 					Contractor Guidelines
+					if(Industry.containsIgnoreCase("Contractor") == true)
+					{
+						lst = List();
+						if(get_lender_info.getJSON("data").getJSON("Construction_TIB").isEmpty() != null)
+						{
+							lender_Construction_TIB = get_lender_info.getJSON("data").getJSON("Construction_TIB");
+							if(lender_Construction_TIB.containsIgnoreCase("Years") == true)
+							{
+								info lender_Construction_TIB.removeAllAlpha().toNumber();
+							}
+						}
+						else
+						{
+							lender_Construction_TIB = 0;
+						}
+						//info lender_Construction_TIB;
+						//info "Year " + get_year;
+						if(get_year <= lender_Construction_TIB)
+						{
+							lst.add(1);
+							sub_form.put("Construction_TIB",true);
+						}
+						else if(lender_Construction_TIB == 0)
+						{
+							lst.add(1);
+							sub_form.put("Construction_TIB",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(Credit_Score_FICO <= ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Credit"),0).toNumber())
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Credit",true);
+						}
+						else if(ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Credit"),"") == "")
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Credit",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(Minimum_Deposits_Monthly <= ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Monthly_Deposits"),0).toNumber())
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Monthly_Deposits",true);
+						}
+						else if(ifnull(get_lender_info.getJSON("data").getJSON("Construction_Min_Monthly_Deposits"),"") == "")
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Monthly_Deposits",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						if(Advance_Position >= ifnull(get_lender_info.getJSON("data").getJSON("Minimum_Position_Funded"),0).toNumber())
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Position",true);
+						}
+						else if(ifnull(get_lender_info.getJSON("data").getJSON("Minimum_Position_Funded"),"") == "")
+						{
+							lst.add(1);
+							sub_form.put("Construction_Min_Position",true);
+						}
+						else
+						{
+							lst.add(0);
+						}
+						new_lst = lst.distinct();
+						if(new_lst.contains(0) == false && new_lst.contains(1) == true)
+						{
+							sub_form.put("Contractor_Guidelines",true);
+						}
+						else
+						{
+							sub_form.put("Contractor_Guidelines",true);
+						}
+					}
+					col.insert(sub_form);
+				}
+			}
+	get_resp = zoho.crm.getRelatedRecords("Attachments","Deals",deal_id.toLong());
+	if(get_resp.size() > 0)
+	{
+		file_collection = Collection();
+		for each  rec in get_resp
+		{
+			get_url = invokeurl
+			[
+				url :"https://www.zohoapis.com/crm/v6/files?id=" + rec.get("$file_id")
+				type :GET
+				connection:"XXXXXXX" 
+			];
+			//                      info get_url ;
+			attachment_map = Map();
+			attachment_map.put("Select",true);
+			attachment_map.put("Deal_Name",deal_id.toLong());
+			attachment_map.put("File_Name",rec.getJSON("File_Name"));
+			attachment_map.put("File_ID",rec.get("$file_id"));
+			attachment_map.put("Attachment",get_url);
+			file_collection.insert(attachment_map);
+		}
+	}
+	m = Map();
+	m.put("Attachments",file_collection);
+	m.put("upload_attachment",true);
+	m.put("Deal_Name",deal_id);
+	if(get_deal_info.getJSON("data").getJSON("Account_Name").size() > 0)
+	{
+		acc_det = get_deal_info.getJSON("data").getJSON("Account_Name");
+		sub = "New Submission from TAG - " + acc_det.getJSON("name") + " - " + get_deal_info.getJSON("data").getJSON("MID");
+		m.put("Subject_field",sub);
+	}
+	else
+	{
+		sub = "New Submission from TAG - " + get_deal_info.getJSON("data").getJSON("MID");
+		m.put("Subject_field",sub);
+	}
+	//m.put("Select_Lenders_Subform",col);
+	get_resp = zoho.crm.getRelatedRecords("Attachments","Deals",deal_id);
+	if(get_resp.size() > 0)
+	{
+		m.put("upload_attachment",true);
+	}
+	// 				info m ;
+	create_record_creator = zoho.creator.createRecord("theaccreditedgroup","submission-tool","Submission_Tool",m,Map(),"XXXXXXX");
+	info "record creation >> " + create_record_creator;
+	if(create_record_creator.getJSON("code") == 3000)
+	{
+		creator_id = create_record_creator.getJSON("data").get("ID");
+		openurl("http://creator.zoho.com/theaccreditedgroup/submission-tool/#Form:Submission_Tool?recLinkID=" + creator_id + "&viewLinkName=All_Submission_Tools","new window");
+		return "Created Successfully!";
+	}
+	else
+	{
+		return "Error occured >> " + create_record_creator;
+	}
+}
+return "";
